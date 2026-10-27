@@ -3,10 +3,11 @@ import { resolverContacto } from '../src/fem/contacto';
 import { cholesky, resolverCholesky } from '../src/fem/lineal';
 import { construirModelo, GRAV } from '../src/fem/modelo';
 import { construirTrono, posicionesVarales, separacionesUniformes, validarConfig } from '../src/geometria/trono';
-import { aleatorio, tronoEjemplo } from '../src/io/ejemplo';
+import { aleatorio } from '../src/io/ejemplo';
+import { tronoBase } from './datos';
 
 const ocho = () => {
-  const c = tronoEjemplo();
+  const c = tronoBase();
   c.varales.numero = 8;
   c.varales.separaciones = [0.5, 0.5, 0.5, 0.35]; // A–B, B–C, C–D y el hueco central D–E
   return c;
@@ -14,7 +15,7 @@ const ocho = () => {
 
 describe('separación entre varales', () => {
   it('por defecto, uniforme con los exteriores en los bordes de la mesa', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     const y = posicionesVarales(c);
     expect(y[0]).toBeCloseTo(c.mesa.ancho / 2, 12);
     expect(y[y.length - 1]).toBeCloseTo(-c.mesa.ancho / 2, 12);
@@ -31,7 +32,7 @@ describe('separación entre varales', () => {
   });
 
   it('las separaciones uniformes como lista reproducen la posición uniforme', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     const u = posicionesVarales(c);
     c.varales.separaciones = separacionesUniformes(c);
     const p = posicionesVarales(c);
@@ -75,7 +76,7 @@ describe('separación entre varales', () => {
   });
 
   it('las cabezas negativas no son válidas', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     c.varales.cabezas.delante.peso = -1;
     expect(validarConfig(c).join(' ')).toMatch(/cabeza delantera/);
   });

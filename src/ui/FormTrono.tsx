@@ -60,6 +60,7 @@ export function FormTrono({ config: c, cambiar, nPuestos }: Props) {
         <Sel<number> etiqueta="Número de varales" valor={n} opciones={[4, 6, 8].map((k) => [k, `${k} (${LETRAS.slice(0, k).split('').join(', ')})`])}
           onCambio={(v) => cambiar((c) => {
             c.varales.numero = v as 4 | 6 | 8;
+            c.submarino.varales = c.submarino.varales.filter((x) => x > 0 && x < v - 1);
             // Las separaciones dependen del número de varales: se vuelven a proponer iguales
             if (c.varales.separaciones) c.varales.separaciones = separacionesUniformes(c);
           })} />

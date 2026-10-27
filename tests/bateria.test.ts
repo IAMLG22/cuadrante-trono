@@ -9,9 +9,10 @@ import { precalcularRapido, resolverRapido } from '../src/fem/rapido';
 import { MATERIALES } from '../src/geometria/secciones';
 import type { ConfigTrono, HdT, Seccion, Trono } from '../src/geometria/tipos';
 import { construirTrono, filasSugeridas, validarConfig } from '../src/geometria/trono';
-import { aleatorio, generarCuadrilla, normal, optimizadorPorDefecto, tronoEjemplo } from '../src/io/ejemplo';
+import { aleatorio, generarCuadrilla, normal, optimizadorPorDefecto } from '../src/io/ejemplo';
 import { calcularCuadrante, evaluarAsignacion, type Resultado } from '../src/optimizador/optimizar';
 import { revisar, UMBRAL_PICADO_GRADOS } from '../src/optimizador/revision';
+import { tronoBase } from './datos';
 
 // ---------------------------------------------------------------- configuraciones
 
@@ -43,7 +44,7 @@ function crearCasos(): Caso[] {
   for (const n of [4, 6, 8] as const) {
     for (const [del, det] of VOLADIZOS) {
       for (const extras of [false, true]) {
-        const c = tronoEjemplo();
+        const c = tronoBase();
         const s = SECCIONES[k % SECCIONES.length];
         c.varales.numero = n;
         c.varales.material = { ...MATERIALES[s.material] };
@@ -322,7 +323,7 @@ describe.each(CASOS_OPT)('optimizador: $nombre', ({ caso, cuadrilla, prioridad }
 
 describe('casos límite', () => {
   it('sin costeros y con voladizo corto (1 fila) también funciona', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     c.puestos.costerosPorLado = 0;
     c.varales.largoDelante = 0.5;
     c.varales.largoDetras = 0.5;
@@ -338,7 +339,7 @@ describe('casos límite', () => {
   });
 
   it('filas a mano que no caben dan error claro', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     c.puestos.filasDelante = 20; // 4,5 m / 20 = 0,225 m entre filas
     expect(validarConfig(c).join(' ')).toMatch(/no caben/);
     c.puestos.filasDelante = 15; // 0,30 m: justo cabe
@@ -346,13 +347,13 @@ describe('casos límite', () => {
   });
 
   it('falta gente: error claro con cuántos faltan', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     const t = construirTrono(c);
     expect(() => calcularCuadrante(c, cuadrillaNormal(t.puestos.length - 5), optimizadorPorDefecto())).toThrow(/Faltan 5 hombres/);
   });
 
   it('voladizo trasero más largo: por defecto va nivelado; si se permite, puede ir picado y la revisión avisa', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     c.varales.numero = 8;
     c.varales.largoDelante = 3.5;
     c.varales.largoDetras = 5;
@@ -372,7 +373,7 @@ describe('casos límite', () => {
   });
 
   it('cuadrilla toda igual de alta: reparto posible y sin picado', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     const t = construirTrono(c);
     const cu = generarCuadrilla(t.puestos.length, 5, () => 155);
     const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza: 0 });
@@ -381,7 +382,7 @@ describe('casos límite', () => {
   });
 
   it('un cuadrante a medio colocar se puede comprobar', () => {
-    const c = tronoEjemplo();
+    const c = tronoBase();
     const t = construirTrono(c);
     const cu = cuadrillaIgualada(t);
     const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza: 0 });

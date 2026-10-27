@@ -87,7 +87,7 @@ function Esquema({ t }: { t: Trono }) {
         {c.quitacimbres.activo && [xDel - c.quitacimbres.distDelante, xDet + c.quitacimbres.distDetras].map((x) => (
           <line class="quitacimbre" x1={x} y1={Y(yA)} x2={x} y2={Y(yZ)} />
         ))}
-        {t.puestos.map((p) => <circle class="punto-puesto" cx={X(p.x)} cy={Y(p.y)} r={0.07} />)}
+        {t.puestos.map((p) => <circle class={`punto-puesto${p.zona === 'submarino' ? ' sub' : ''}`} cx={X(p.x)} cy={Y(p.y)} r={0.07} />)}
         {/* Cotas a lo largo */}
         {cota(xDet, -L / 2, yCota1, m(c.varales.largoDetras))}
         {cota(-L / 2, L / 2, yCota1, m(L))}
@@ -117,7 +117,7 @@ function Perfil({ t, w }: { t: Trono; w: Float64Array }) {
   const [hover, setHover] = useState<number | null>(null);
   const exterior = 0, central = Math.floor((t.nVarales - 1) / 2);
   const serie = (v: number) =>
-    t.puestos.filter((p) => p.varal === v).sort((a, b) => a.x - b.x).map((p) => ({ x: p.x, cm: w[p.idx] * 100, numero: p.numero }));
+    t.puestos.filter((p) => p.varal === v && p.zona !== 'submarino').sort((a, b) => a.x - b.x).map((p) => ({ x: p.x, cm: w[p.idx] * 100, numero: p.numero }));
   const sA = serie(exterior), sC = serie(central);
   const xs = sA.map((p) => p.x);
   const x0 = Math.min(...xs), x1 = Math.max(...xs);

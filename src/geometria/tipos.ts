@@ -49,6 +49,14 @@ export interface ConfigTrono {
     filasDetras: number;
     costerosPorLado: number;
   };
+  /**
+   * Submarino: HdT bajo la mesa sobre los varales interiores «trabajables» (índices de varal,
+   * A = 0). Los coloca el capataz: «Rellenar huecos» no los toca.
+   */
+  submarino: {
+    varales: number[];
+    porVaral: number;
+  };
 }
 
 /**
@@ -107,18 +115,18 @@ export interface HdT {
   confianza: 1 | 2 | 3;
 }
 
-export type Zona = 'delante' | 'mesa' | 'detras';
+export type Zona = 'delante' | 'mesa' | 'detras' | 'submarino';
 
 export interface Puesto {
   idx: number;
   /** Referencia estable del puesto (igual que el código). */
   ref: string;
-  /** Código A1, B7… */
+  /** Código A1, B7… (en el submarino, C-S1, C-S2…). */
   codigo: string;
   /** Índice de varal 0..n-1 (A = 0). */
   varal: number;
   zona: Zona;
-  /** Número correlativo en el varal. */
+  /** Número correlativo en el varal (en el submarino, su orden dentro del varal: 1, 2…). */
   numero: number;
   x: number;
   y: number;

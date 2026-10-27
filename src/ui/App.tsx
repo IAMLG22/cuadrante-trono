@@ -158,10 +158,11 @@ export function App() {
   };
 
   const colocados = Object.keys(estado.asignacion).length;
+  const huecosRellenables = trono ? trono.puestos.filter((p) => estado.asignacion[p.ref] === undefined).length : 0;
   const rellenar = () => {
     setError(null);
     if (!trono) return;
-    const libres = nPuestos - colocados;
+    const libres = huecosRellenables;
     const disponibles = estado.cuadrilla.length - colocados;
     if (libres === 0) { setError('No hay huecos: todos los puestos están cubiertos.'); return; }
     if (disponibles < libres) {
@@ -242,7 +243,7 @@ export function App() {
       {progreso ? (
         <button type="button" class="secundario" onClick={cancelarRelleno} title={progreso.texto}>Cancelar · {Math.round(progreso.fraccion * 100)} %</button>
       ) : (
-        <button type="button" class="secundario" onClick={rellenar} disabled={!trono || colocados === nPuestos}
+        <button type="button" class="secundario" onClick={rellenar} disabled={!trono || huecosRellenables === 0}
           title="El programa coloca al resto sin tocar a los que ya has puesto">Rellenar huecos</button>
       )}
     </>

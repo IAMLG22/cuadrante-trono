@@ -7,8 +7,15 @@ import type { ConfigTrono, HdT } from '../src/geometria/tipos';
 import { construirTrono } from '../src/geometria/trono';
 import { generarCuadrilla, normal, tronoEjemplo } from '../src/io/ejemplo';
 
-export function tronoPrueba(): ConfigTrono {
+/** Trono de ejemplo sin submarino: la base de los tests (el ejemplo puede cambiar). */
+export function tronoBase(): ConfigTrono {
   const c = tronoEjemplo();
+  c.submarino = { varales: [], porVaral: 4 };
+  return c;
+}
+
+export function tronoPrueba(): ConfigTrono {
+  const c = tronoBase();
   c.varales.numero = 8;
   c.puestos.filasDelante = 10;
   c.puestos.filasDetras = 10;

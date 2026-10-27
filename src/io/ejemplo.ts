@@ -32,6 +32,7 @@ export function tronoEjemplo(): ConfigTrono {
       filasDetras: 10,
       costerosPorLado: 12,
     },
+    submarino: { varales: [2, 3], porVaral: 4 },
   };
 }
 
@@ -66,11 +67,14 @@ export function aleatorio(semilla: number) {
 }
 
 /**
- * Hombros de la cuadrilla de ejemplo: campana ancha de media 156 cm y desviación 5 cm, sin salir
- * de 146–164 cm. Hay bastantes cerca de 1,62 y unos cuantos cerca de 1,46.
+ * Cuántos HdT de cada talla (cm de hombro) tiene la cuadrilla de ejemplo, como en una cuadrilla
+ * real: algunos de 146–147, muchos de 148–149, el grueso entre 149 y 155 y unos cuantos por encima.
+ * Dentro de cada centímetro, la mitad se mide en ,0 y la otra mitad en ,5 (más o menos).
  */
-export const HOMBRO_MEDIO = 156;
-export const HOMBRO_DESVIACION = 5;
+export const TALLAS_EJEMPLO: Record<number, number> = {
+  146: 3, 147: 5, 148: 14, 149: 18, 150: 20, 151: 20, 152: 20, 153: 18, 154: 16, 155: 13,
+  156: 8, 157: 6, 158: 5, 159: 4, 160: 3, 161: 3, 162: 2, 163: 1, 164: 1,
+};
 export const HOMBRO_MIN = 146;
 export const HOMBRO_MAX = 164;
 
@@ -102,15 +106,19 @@ export function generarCuadrilla(n: number, semilla: number, hombro: (r: () => n
 }
 
 /**
- * Cuadrilla de ejemplo: 150 HdT (144 puestos y 6 de reserva) con el hombro distribuido como en
- * una cuadrilla real: la mayoría entre 150 y 162 cm, con gente también cerca de los extremos (146 y 164 cm).
- * Se mide al medio centímetro.
+ * Cuadrilla de ejemplo: 180 HdT (144 puestos y el resto de reserva) con las tallas de
+ * `TALLAS_EJEMPLO`, medidas al medio centímetro y en orden aleatorio.
  */
-export function cuadrillaEjemplo(n = 150, semilla = 2026): HdT[] {
-  return generarCuadrilla(n, semilla, (r) => {
-    let h: number;
-    do h = Math.round((HOMBRO_MEDIO + HOMBRO_DESVIACION * normal(r)) * 2) / 2;
-    while (h < HOMBRO_MIN || h > HOMBRO_MAX);
-    return h;
-  });
+export function cuadrillaEjemplo(semilla = 2026): HdT[] {
+  const r = aleatorio(semilla + 1);
+  const tallas: number[] = [];
+  for (const [cm, n] of Object.entries(TALLAS_EJEMPLO)) {
+    for (let k = 0; k < n; k++) tallas.push(Number(cm) + (Number(cm) < HOMBRO_MAX && r() < 0.5 ? 0.5 : 0));
+  }
+  // Barajar (Fisher-Yates) para que la lista no salga ordenada por talla
+  for (let i = tallas.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [tallas[i], tallas[j]] = [tallas[j], tallas[i]];
+  }
+  return generarCuadrilla(tallas.length, semilla, (_, i) => tallas[i]);
 }

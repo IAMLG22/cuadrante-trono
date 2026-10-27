@@ -3,11 +3,12 @@
 import type { ConfigOptimizador, ConfigTrono, HdT, Trono } from '../geometria/tipos';
 import { FormCuadrilla } from './FormCuadrilla';
 import { FormOptimizador } from './FormOptimizador';
+import { FormSubmarino } from './FormSubmarino';
 import { FormTrono } from './FormTrono';
 import { Histograma } from './Histograma';
 import { VistaTrono } from './VistaTrono';
 
-export type PestanaConfig = 'trono' | 'cuadrilla' | 'confianza';
+export type PestanaConfig = 'trono' | 'submarino' | 'cuadrilla' | 'confianza';
 
 interface Props {
   pestana: PestanaConfig;
@@ -30,7 +31,11 @@ interface Props {
 
 export function Configuracion(p: Props) {
   const nPuestos = p.trono?.puestos.length ?? 0;
-  const pestanas: [PestanaConfig, string][] = [['trono', 'Trono'], ['cuadrilla', `Cuadrilla · ${p.cuadrilla.length}`], ['confianza', 'Confianza']];
+  const nSub = p.trono?.puestos.filter((q) => q.zona === 'submarino').length ?? 0;
+  const pestanas: [PestanaConfig, string][] = [
+    ['trono', 'Trono'], ['submarino', nSub ? `Submarino · ${nSub}` : 'Submarino'],
+    ['cuadrilla', `Cuadrilla · ${p.cuadrilla.length}`], ['confianza', 'Confianza'],
+  ];
   return (
     <div class="configuracion">
       <div class="config-cabecera">
@@ -54,6 +59,17 @@ export function Configuracion(p: Props) {
           <div class="config-formularios">
             {p.esEjemploTrono && <p class="nota">Es un trono de ejemplo: cambia las medidas por las del tuyo. Todo se guarda solo en este navegador.</p>}
             <FormTrono config={p.config} cambiar={p.cambiarConfig} nPuestos={nPuestos} />
+          </div>
+          <aside class="config-vista">
+            {p.trono ? <VistaTrono t={p.trono} /> : <p class="vacio">Corrige los datos para ver el trono.</p>}
+          </aside>
+        </div>
+      )}
+
+      {p.pestana === 'submarino' && (
+        <div class="config-trono">
+          <div class="config-formularios">
+            <FormSubmarino config={p.config} cambiar={p.cambiarConfig} />
           </div>
           <aside class="config-vista">
             {p.trono ? <VistaTrono t={p.trono} /> : <p class="vacio">Corrige los datos para ver el trono.</p>}

@@ -92,6 +92,19 @@ export function PorVaral({ v, conCarga = true }: { v: Vista; conCarga?: boolean 
 export function Listas({ v }: { v: Vista }) {
   return (
     <div class="listas">
+      {v.submarino.length > 0 && (
+        <section>
+          <h3>Submarino ({v.submarino.filter((f) => f.hdt).length} / {v.submarino.length})</h3>
+          <table class="tabla">
+            <thead><tr><th>Puesto</th><th>Nombre</th><th class="num">Hombro</th><th class="num">Confianza</th></tr></thead>
+            <tbody>
+              {v.submarino.map((f) => (
+                <tr><td class="codigo">{f.puesto.codigo}</td><td>{f.hdt?.nombre ?? '—'}</td><td class="num">{f.hdt ? fmt(f.hdt.hombro) : ''}</td><td class="num">{f.hdt?.confianza ?? ''}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       <section>
         <h3>Reserva ({v.reservas.length})</h3>
         <table class="tabla">

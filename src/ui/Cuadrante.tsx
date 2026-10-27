@@ -86,6 +86,21 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
     return m;
   }, [v]);
 
+  // Bloque de la mesa: una columna por varal interior; en los trabajables, sus puestos de submarino
+  const bloqueMesa = () => {
+    if (v.submarino.length === 0) return <div class="mesa-bloque">Mesa</div>;
+    return (
+      <div class="mesa-bloque con-submarino" style={{ gridTemplateColumns: `repeat(${t.nVarales - 2}, minmax(0, 1fr))` }}>
+        <span class="rotulo-submarino">Submarino</span>
+        {Array.from({ length: t.nVarales - 2 }, (_, k) => {
+          const varal = k + 1;
+          const propios = v.submarino.filter((f) => f.puesto.varal === varal).sort((a, b) => a.puesto.numero - b.puesto.numero);
+          return <div class="columna-submarino">{propios.map((f) => celda(f))}</div>;
+        })}
+      </div>
+    );
+  };
+
   const celda = (f: FilaPuesto) => {
     const o = { puesto: f.puesto.ref };
     const clases = ['celda', `c-${f.clase}`, f.puesto.clave ? 'clave' : '', resaltados.has(f.puesto.ref) ? 'resaltado' : '',
@@ -180,7 +195,22 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
               <tr><th class="n" />{t.letras.map((l) => <th>{l}</th>)}</tr>
             </thead>
             <tbody>
-              {matriz.map((fila, i) => {
+              {[
+                ...matriz.slice(0, nf),
+                ...(nc === 0 && v.submarino.length > 0 ? [null] : []),
+                ...matriz.slice(nf),
+              ].map((fila) => {
+                if (fila === null) {
+                  return (
+                    <tr class="z-mesa limite">
+                      <th class="n" />
+                      <td class="cortado" />
+                      <td class="hueco-mesa" colSpan={t.nVarales - 2}>{bloqueMesa()}</td>
+                      <td class="cortado" />
+                    </tr>
+                  );
+                }
+                const i = matriz.indexOf(fila);
                 const numero = i + 1;
                 const zona = numero <= nf ? 'delante' : numero <= nf + nc ? 'mesa' : 'detras';
                 const limite = numero === nf + 1 || numero === nf + nc + 1 ? ' limite' : '';
@@ -191,7 +221,7 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
                       if (f) return <td>{celda(f)}</td>;
                       // Interior de la mesa: un único bloque
                       if (zona === 'mesa' && vIdx === 1 && numero === nf + 1) {
-                        return <td class="hueco-mesa" colSpan={t.nVarales - 2} rowSpan={nc}><div class="mesa-bloque">Mesa</div></td>;
+                        return <td class="hueco-mesa" colSpan={t.nVarales - 2} rowSpan={nc}>{bloqueMesa()}</td>;
                       }
                       if (zona === 'mesa' && vIdx > 0 && vIdx < t.nVarales - 1) return null;
                       return <td class="cortado" />;

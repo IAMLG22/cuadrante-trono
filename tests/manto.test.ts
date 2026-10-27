@@ -4,10 +4,11 @@ import { construirModelo, GRAV } from '../src/fem/modelo';
 import { precalcularRapido, resolverRapido } from '../src/fem/rapido';
 import type { ConfigTrono, RepartoManto } from '../src/geometria/tipos';
 import { cdgManto, construirTrono, EXPONENTE_MANTO, fraccionMantoEnMesa, longitudManto, validarConfig } from '../src/geometria/trono';
-import { aleatorio, tronoEjemplo } from '../src/io/ejemplo';
+import { aleatorio } from '../src/io/ejemplo';
+import { tronoBase } from './datos';
 
 const conManto = (reparto: RepartoManto, peso = 300, distanciaFinal = 0.5, apoyo: 'mesa' | 'varales' = 'varales'): ConfigTrono => {
-  const c = tronoEjemplo();
+  const c = tronoBase();
   c.manto = { activo: true, peso, distanciaFinal, reparto, apoyo };
   return c;
 };
@@ -29,7 +30,7 @@ function sumas(c: ConfigTrono, h: Float64Array) {
 }
 
 describe('manto', () => {
-  const base = tronoEjemplo();
+  const base = tronoBase();
   const h = hombros(base);
   const sinManto = sumas(base, h);
 

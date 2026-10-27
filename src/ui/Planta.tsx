@@ -145,7 +145,7 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
                   {resaltados.has(p.ref) && <circle class="halo" cx={x} cy={y} r={0.27} />}
                   {p.clave && <circle class="aro" cx={x} cy={y} r={0.215} />}
                   <circle class="disco" cx={x} cy={y} r={0.16} />
-                  <text x={x} y={y}>{p.codigo}</text>
+                  <text x={x} y={y}>{p.zona === 'submarino' ? p.codigo.split('-')[1] : p.codigo}</text>
                 </g>
               );
             })}

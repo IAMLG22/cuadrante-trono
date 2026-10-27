@@ -158,8 +158,9 @@ export function huellaDatos(c: ConfigTrono, cuadrilla: HdT[], op: ConfigOptimiza
 }
 
 /**
- * Reparte la cuadrilla en los puestos. `colocados` (id de HdT por puesto, −1 = libre) son los
- * que el capataz ya ha puesto a mano: se respetan y solo se rellenan los huecos.
+ * Reparte la cuadrilla en los puestos (también los del submarino). `colocados` (id de HdT por
+ * puesto, −1 = libre) son los que el capataz ya ha puesto a mano: se respetan y solo se rellenan
+ * los huecos.
  */
 export function calcularCuadrante(
   c: ConfigTrono, cuadrilla: HdT[], op: ConfigOptimizador, progreso: Progreso = () => {}, colocados?: number[],
@@ -226,10 +227,11 @@ type Analisis = Omit<Resultado, 'sinConfianza' | 'tiempoMs' | 'huella'>;
 /** Cargas, resumen, cuesta y confianza de una asignación (índices de la cuadrilla). */
 function analizar(t: Trono, m: Modelo, rapido: SolverRapido, cuadrilla: HdT[], asig: Int32Array, reservas: number[]): Analisis {
   const N = t.puestos.length;
-  const FidN = m.pesoTotalN / N;
-  const idealKg = FidN / GRAV;
   const ocupados = t.puestos.filter((p) => asig[p.idx] >= 0);
   if (ocupados.length < Math.min(N, 8)) throw new ErrorApoyo('Coloca más gente para poder comprobar el reparto.');
+  // Carga ideal: el peso total repartido entre los que hay colocados
+  const FidN = m.pesoTotalN / ocupados.length;
+  const idealKg = FidN / GRAV;
   // Un puesto vacío es un hombro muy por debajo del varal: nunca llega y no carga.
   const h = Float64Array.from(asig, (p) => (p >= 0 ? cuadrilla[p].hombro / 100 : -10));
   const xs = t.puestos.map((p) => p.x);

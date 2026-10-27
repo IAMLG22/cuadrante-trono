@@ -44,8 +44,10 @@ export interface Vista {
   trono: Trono;
   /** Fila por índice de puesto. */
   porPuesto: FilaPuesto[];
-  /** Igual que porPuesto (todos los puestos son de varal). */
+  /** Puestos numerados de los varales (sin el submarino). */
   filas: FilaPuesto[];
+  /** Puestos del submarino, por varal y orden. */
+  submarino: FilaPuesto[];
   /** HdT sin colocar, de más alto a más bajo. */
   reservas: HdT[];
   resultado: Resultado | null;
@@ -66,7 +68,8 @@ export function construirVista(d: DatosCalculo, asig: Asignacion, r: Resultado |
   return {
     trono: t,
     porPuesto,
-    filas: porPuesto,
+    filas: porPuesto.filter((f) => f.puesto.zona !== 'submarino'),
+    submarino: porPuesto.filter((f) => f.puesto.zona === 'submarino'),
     reservas: d.cuadrilla.filter((h) => !usados.has(h.id)).sort((a, b) => b.hombro - a.hombro),
     resultado: r,
   };
@@ -85,7 +88,8 @@ export function asignacionDesdeResultado(t: Trono, ids: number[]): Asignacion {
 }
 
 /** Orden natural de puestos: por varal y número. */
-export const ordenPuesto = (a: Puesto, b: Puesto) => a.varal - b.varal || a.numero - b.numero;
+export const ordenPuesto = (a: Puesto, b: Puesto) =>
+  Number(a.zona === 'submarino') - Number(b.zona === 'submarino') || a.varal - b.varal || a.numero - b.numero;
 
 export const fmt = (v: number, dec = 1) => v.toLocaleString('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 
@@ -96,6 +100,7 @@ export function tablaCuadrante(v: Vista): Celda[][] {
   for (const f of [...v.filas].sort((a, b) => ordenPuesto(a.puesto, b.puesto))) {
     filas.push([f.puesto.codigo, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.hdt?.confianza ?? null, f.carga]);
   }
+  for (const f of v.submarino) filas.push([`Submarino ${f.puesto.codigo}`, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.hdt?.confianza ?? null, f.carga]);
   for (const h of v.reservas) filas.push(['Reserva', h.nombre, h.hombro, h.confianza, null]);
   return filas;
 }

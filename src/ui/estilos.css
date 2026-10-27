@@ -599,3 +599,22 @@ figure.esquema .delante { fill: var(--oro); font-size: 0.28px; font-weight: 600;
 
 figure.esquema .manto path { fill: var(--oro); fill-opacity: 0.14; stroke: var(--oro); stroke-width: 0.02; stroke-dasharray: 0.06 0.04; }
 figure.esquema .manto text { fill: var(--oro); font-size: 0.24px; font-weight: 600; letter-spacing: 0.03px; }
+
+/* ---------- Submarino ---------- */
+.varales-trabajables { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
+.varal-chip {
+  min-width: 48px; min-height: 44px; font-size: 1.05rem; font-weight: 600; border-radius: 10px;
+  background: var(--hundido); border: 1px solid var(--linea); color: var(--suave);
+}
+.varal-chip.activo { background: var(--oro); border-color: var(--oro); color: var(--sobre-oro); }
+.mesa-bloque.con-submarino {
+  display: grid; gap: 6px; align-items: start; padding: 22px 0 6px; position: relative;
+  letter-spacing: normal; text-transform: none; font-size: inherit; justify-content: stretch;
+}
+.rotulo-submarino {
+  position: absolute; top: 4px; left: 0; right: 0; text-align: center;
+  font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--tenue);
+}
+.columna-submarino { display: flex; flex-direction: column; gap: 3px; padding: 0 1px; }
+.columna-submarino .celda { min-height: 50px; }
+figure.esquema .punto-puesto.sub { fill: var(--suave); }

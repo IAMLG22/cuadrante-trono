@@ -61,6 +61,12 @@ export function fraccionMantoEnMesa(c: ConfigTrono): number {
   return Math.min(1, (c.mesa.largo / 2 / Lm) ** (p + 1));
 }
 
+/** Varales interiores (ni el primero ni el último) en los que va submarino, ordenados. */
+export function varalesSubmarino(c: ConfigTrono): number[] {
+  const n = c.varales.numero;
+  return [...new Set(c.submarino.varales)].filter((v) => v > 0 && v < n - 1).sort((a, b) => a - b);
+}
+
 /** Número de separaciones que hay que dar para n varales (un lado más el hueco central). */
 export const nSeparaciones = (n: number) => n / 2;
 
@@ -137,7 +143,7 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
   const nuevo = (q: Omit<Puesto, 'idx' | 'espejo' | 'ref'>) => {
     const idx = puestos.length;
     puestos.push({ ...q, idx, ref: q.codigo, espejo: -1 });
-    clave.set(`${q.varal}:${q.numero}`, idx);
+    clave.set(`${q.zona === 'submarino' ? 's' : ''}${q.varal}:${q.numero}`, idx);
     return idx;
   };
 
@@ -165,12 +171,26 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
       });
     }
   }
+  // Submarino: repartido por igual a lo largo de la mesa en cada varal trabajable (de delante a atrás)
+  const ns = c.submarino.porVaral;
+  for (const v of varalesSubmarino(c)) {
+    for (let j = 0; j < ns; j++) {
+      nuevo({
+        codigo: `${letras[v]}-S${j + 1}`, varal: v, zona: 'submarino', numero: j + 1,
+        x: L / 2 - ((j + 0.5) * L) / ns, y: yVarales[v], clave: false, fila: -1,
+      });
+    }
+  }
   // Puestos clave elegidos por el capataz (si no ha elegido, queda la sugerencia automática)
   if (conf.puestosClave) {
     const elegidos = new Set(conf.puestosClave);
     for (const q of puestos) q.clave = elegidos.has(q.codigo);
   }
-  for (const q of puestos) q.espejo = clave.get(`${n - 1 - q.varal}:${q.numero}`)!;
+  // Espejo: el mismo puesto en el varal simétrico (en el submarino, él mismo si ese varal no trabaja)
+  for (const q of puestos) {
+    const k = `${q.zona === 'submarino' ? 's' : ''}${n - 1 - q.varal}:${q.numero}`;
+    q.espejo = clave.get(k) ?? q.idx;
+  }
 
   const seccion = propiedades(c.varales.seccion, c.varales.material);
   const seccionQuitacimbre = c.quitacimbres.activo
@@ -225,6 +245,10 @@ export function validarConfig(c: ConfigTrono): string[] {
     if (!(c.manto.peso >= 0)) e.push('El peso del manto no puede ser negativo.');
     if (!(c.manto.distanciaFinal >= 0)) e.push('La distancia del manto al final de los varales no puede ser negativa.');
     else if (!(longitudManto(c) > 0)) e.push('El manto tiene que acabar detrás del centro de la mesa: reduce la distancia al final de los varales.');
+  }
+  if (!(Number.isInteger(c.submarino.porVaral) && c.submarino.porVaral >= 0)) e.push('El número de personas por varal del submarino no es válido.');
+  if (c.submarino.varales.some((v) => !(v > 0 && v < c.varales.numero - 1))) {
+    e.push('En el submarino solo pueden trabajar los varales interiores.');
   }
   const sep = c.varales.separaciones;
   if (sep) {

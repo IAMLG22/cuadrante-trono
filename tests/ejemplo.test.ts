@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { construirTrono } from '../src/geometria/trono';
-import { cuadrillaEjemplo, HOMBRO_MAX, HOMBRO_MIN, tronoEjemplo } from '../src/io/ejemplo';
+import { cuadrillaEjemplo, HOMBRO_MAX, HOMBRO_MIN, TALLAS_EJEMPLO, tronoEjemplo } from '../src/io/ejemplo';
 
 describe('datos de ejemplo', () => {
   const t = construirTrono(tronoEjemplo());
@@ -12,26 +12,29 @@ describe('datos de ejemplo', () => {
       expect(p.filter((q) => q.zona === 'delante').length).toBe(10);
       expect(p.filter((q) => q.zona === 'detras').length).toBe(10);
     }
-    // 6 × 20 + 2 × 12 costeros (el submarino no cuenta)
-    expect(t.puestos.length).toBe(144);
+    // 6 × 20 + 2 × 12 costeros + submarino en C y D (4 por varal)
+    expect(t.puestos.filter((p) => p.zona !== 'submarino').length).toBe(144);
+    expect(t.puestos.filter((p) => p.zona === 'submarino').map((p) => p.codigo)).toEqual(
+      ['C-S1', 'C-S2', 'C-S3', 'C-S4', 'D-S1', 'D-S2', 'D-S3', 'D-S4']);
   });
 
   it('hay más HdT que puestos (algunos de reserva)', () => {
     expect(cuadrillaEjemplo().length).toBeGreaterThan(t.puestos.length);
   });
 
-  it('hombros en campana ancha: media ~156 cm, entre 146 y 164, con gente cerca de los extremos', () => {
+  it('tallas como en una cuadrilla real: el grueso entre 149 y 155, muchos de 148–149 y pocos altos', () => {
     const h = cuadrillaEjemplo().map((x) => x.hombro);
-    const media = h.reduce((a, b) => a + b, 0) / h.length;
-    expect(Math.abs(media - 156)).toBeLessThan(1);
+    expect(h.length).toBe(180);
     expect(Math.min(...h)).toBeGreaterThanOrEqual(HOMBRO_MIN);
     expect(Math.max(...h)).toBeLessThanOrEqual(HOMBRO_MAX);
-    const frac = (f: (x: number) => boolean) => h.filter(f).length / h.length;
-    expect(frac((x) => x >= 153 && x < 157)).toBeLessThan(0.35); // no tanta gente en el medio
-    expect(frac((x) => x >= 160)).toBeGreaterThan(0.12); // bastantes cerca de 1,62
-    expect(frac((x) => x <= 150)).toBeGreaterThan(0.06); // unos cuantos cerca de 1,46
-    expect(frac((x) => x >= 160)).toBeGreaterThan(frac((x) => x <= 150));
+    const cuenta = (f: (x: number) => boolean) => h.filter(f).length;
+    expect(cuenta((x) => x >= 146 && x < 148)).toBeGreaterThanOrEqual(8); // hay de 1,46 y 1,47
+    expect(cuenta((x) => x >= 148 && x < 150)).toBeGreaterThanOrEqual(30); // mucha gente de 1,48 y 1,49
+    expect(cuenta((x) => x >= 149 && x < 156)).toBeGreaterThan(0.65 * h.length); // el grueso
+    expect(cuenta((x) => x >= 156)).toBeLessThan(0.2 * h.length); // por encima, unos cuantos
     expect(h.every((x) => Number.isInteger(x * 2))).toBe(true); // al medio centímetro
+    // Cada centímetro tiene exactamente los HdT de la tabla
+    for (const [cm, n] of Object.entries(TALLAS_EJEMPLO)) expect(cuenta((x) => Math.floor(x) === Number(cm))).toBe(n);
   });
 });
 
@@ -45,7 +48,7 @@ describe('dirección de la inclinación', () => {
       const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza });
       expect(r.inclinacionGrados).toBeGreaterThanOrEqual(-0.01);
       const media = (n: number) => {
-        const hs = t.puestos.filter((p) => p.numero === n).map((p) => porId.get(r.asignacion[p.idx])!);
+        const hs = t.puestos.filter((p) => p.zona !== 'submarino' && p.numero === n).map((p) => porId.get(r.asignacion[p.idx])!);
         return hs.reduce((a, b) => a + b, 0) / hs.length;
       };
       // Delante: la punta (fila 1) más alta que junto a la mesa (fila 10); detrás igual (32 frente a 23)

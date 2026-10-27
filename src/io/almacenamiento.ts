@@ -46,6 +46,7 @@ export function cargarEstado(): Estado {
     e.config.varales.cabezas ??= { delante: { peso: 0, longitud: 0 }, detras: { peso: 0, longitud: 0 } };
     e.config.manto ??= { activo: false, peso: 250, distanciaFinal: 0.5, reparto: 'final', apoyo: 'mesa' };
     e.config.manto.apoyo ??= 'mesa';
+    e.config.submarino ??= { varales: [], porVaral: 4 };
     // Antes las filas podían ser «automáticas» (null) según primera fila y separación
     const pu = e.config.puestos as typeof e.config.puestos & { distPrimeraFila?: number; separacionFilas?: number };
     if (pu.filasDelante === null || pu.filasDelante === undefined) pu.filasDelante = filasAutomaticas(e.config.varales.largoDelante, pu.distPrimeraFila ?? 0.3, pu.separacionFilas ?? 0.45);
