@@ -11,13 +11,15 @@ import { revisar } from '../optimizador/revision';
 import type { MensajeEntrada, MensajeSalida } from '../optimizador/worker';
 import { Cuadrante, type ModoCuadrante } from './Cuadrante';
 import { Configuracion, type PestanaConfig } from './Configuracion';
+import { FormCuadrilla } from './FormCuadrilla';
+import { Histograma } from './Histograma';
 import { Impresion } from './Impresion';
 import { Planta, type ModoPlanta } from './Planta';
 import { Indicadores, Resumen } from './Resumen';
 import { Revision } from './Revision';
 import { Lista } from './Tablas';
 
-type Seccion = 'cuadrante' | 'configuracion';
+type Seccion = 'cuadrante' | 'cuadrilla' | 'configuracion';
 type PestanaRes = 'cuadrante' | 'planta' | 'resumen' | 'lista';
 
 const clonar = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -259,6 +261,8 @@ export function App() {
         <nav class="secciones" aria-label="Apartados">
           <button type="button" class={seccion === 'cuadrante' ? 'activa' : ''} aria-current={seccion === 'cuadrante' ? 'page' : undefined}
             onClick={() => setSeccion('cuadrante')}>Cuadrante</button>
+          <button type="button" class={seccion === 'cuadrilla' ? 'activa' : ''} aria-current={seccion === 'cuadrilla' ? 'page' : undefined}
+            onClick={() => setSeccion('cuadrilla')}>Cuadrilla</button>
           <button type="button" class={seccion === 'configuracion' ? 'activa' : ''} aria-current={seccion === 'configuracion' ? 'page' : undefined}
             onClick={() => setSeccion('configuracion')}>Configuración</button>
         </nav>
@@ -273,15 +277,27 @@ export function App() {
         )}
       </header>
 
-      {seccion === 'configuracion' ? (
+      {seccion === 'cuadrilla' ? (
+        <main class="contenido no-imprimir">
+          <div class="config-cuadrilla">
+            <aside class="config-vista">
+              <Histograma cuadrilla={estado.cuadrilla} />
+            </aside>
+            <div class="config-formularios">
+              <FormCuadrilla cuadrilla={estado.cuadrilla} nPuestos={nPuestos} esEjemplo={estado.ejemploCuadrilla}
+                cambiar={cambiarCuadrilla}
+                cargarEjemplo={() => setEstado((e) => ({ ...e, cuadrilla: cuadrillaEjemplo(), ejemploCuadrilla: true }))} />
+            </div>
+          </div>
+        </main>
+      ) : seccion === 'configuracion' ? (
         <main class="contenido no-imprimir">
           <Configuracion
             pestana={pConfig} setPestana={setPConfig}
             config={estado.config} cambiarConfig={cambiarConfig} trono={trono} errores={errores}
-            cuadrilla={estado.cuadrilla} cambiarCuadrilla={cambiarCuadrilla}
-            cargarCuadrillaEjemplo={() => setEstado((e) => ({ ...e, cuadrilla: cuadrillaEjemplo(), ejemploCuadrilla: true }))}
+            cuadrilla={estado.cuadrilla}
             opt={estado.opt} cambiarOpt={cambiarOpt}
-            esEjemploTrono={estado.ejemploTrono} esEjemploCuadrilla={estado.ejemploCuadrilla}
+            esEjemploTrono={estado.ejemploTrono}
             cargarTronoEjemplo={() => setEstado((e) => ({ ...e, config: tronoEjemplo(), ejemploTrono: true }))}
             borrarTodo={restablecer} elegirClaves={elegirClaves} />
         </main>

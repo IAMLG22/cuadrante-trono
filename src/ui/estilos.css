@@ -618,3 +618,34 @@ figure.esquema .manto text { fill: var(--oro); font-size: 0.24px; font-weight: 6
 .columna-submarino { display: flex; flex-direction: column; gap: 3px; padding: 0 1px; }
 .columna-submarino .celda { min-height: 50px; }
 figure.esquema .punto-puesto.sub { fill: var(--suave); }
+
+/* ---------- ¿Varales óptimos? ---------- */
+.largo-varales { display: flex; flex-direction: column; gap: 20px; }
+.explicacion-largo p { margin: 0 0 10px; max-width: 72ch; line-height: 1.5; }
+.explicacion-largo .nota { margin: 0; }
+.progreso-largo { position: relative; height: 28px; border-radius: 8px; background: var(--hundido); overflow: hidden; }
+.progreso-largo .barra { position: absolute; inset: 0 auto 0 0; background: var(--oro-suave); transition: width 0.15s; }
+.progreso-largo span { position: relative; display: block; padding: 5px 12px; font-size: 0.82rem; color: var(--suave); }
+.lado-largo { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 20px; align-items: start; transition: opacity 0.2s; }
+.lado-largo.recalculando { opacity: 0.55; }
+@media (max-width: 900px) { .lado-largo { grid-template-columns: minmax(0, 1fr); } }
+.veredicto-largo p { margin: 0 0 12px; line-height: 1.5; }
+.sello-veredicto { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--linea-fuerte); }
+.v-optimo .sello-veredicto { border-color: var(--bien); color: var(--bien); }
+.v-largo .sello-veredicto, .v-corto .sello-veredicto { border-color: var(--oro); color: var(--oro); }
+.cifras-largo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 0 0 6px; }
+.cifras-largo dt { font-size: 0.72rem; color: var(--suave); text-transform: uppercase; letter-spacing: 0.06em; }
+.cifras-largo dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.linea-largo { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.linea-largo.s-altos { stroke: var(--oro); }
+.linea-largo.s-ideal { stroke: var(--suave); stroke-dasharray: 5 4; }
+.linea-largo.s-punta { stroke: var(--tenue); stroke-dasharray: 1.5 4; }
+.trazo.s-ideal { border-top: 2px dashed var(--suave); }
+.trazo.s-punta { border-top: 2px dotted var(--tenue); }
+.marca-largo { stroke: var(--linea-fuerte); stroke-width: 1.5; }
+.marca-largo.recomendado { stroke: var(--oro); stroke-dasharray: 3 3; }
+.rotulo-largo { fill: var(--suave); font-size: 10px; text-anchor: middle; }
+.rotulo-largo.recomendado { fill: var(--oro); }
+.tabla-largo { margin-top: 10px; }
+.tabla-largo summary { cursor: pointer; font-size: 0.82rem; color: var(--suave); }
+.tabla-largo .fila-actual td { font-weight: 600; background: var(--oro-suave); }

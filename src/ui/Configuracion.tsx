@@ -1,14 +1,13 @@
-// Apartado «Configuración»: pantalla completa para el trono, la cuadrilla y la confianza.
+// Apartado «Configuración»: pantalla completa para el trono, el submarino, el largo de los varales y la confianza.
 
 import type { ConfigOptimizador, ConfigTrono, HdT, Trono } from '../geometria/tipos';
-import { FormCuadrilla } from './FormCuadrilla';
 import { FormOptimizador } from './FormOptimizador';
 import { FormSubmarino } from './FormSubmarino';
 import { FormTrono } from './FormTrono';
-import { Histograma } from './Histograma';
+import { LargoVarales } from './LargoVarales';
 import { VistaTrono } from './VistaTrono';
 
-export type PestanaConfig = 'trono' | 'submarino' | 'cuadrilla' | 'confianza';
+export type PestanaConfig = 'trono' | 'submarino' | 'largo' | 'confianza';
 
 interface Props {
   pestana: PestanaConfig;
@@ -18,12 +17,9 @@ interface Props {
   trono: Trono | null;
   errores: string[];
   cuadrilla: HdT[];
-  cambiarCuadrilla: (c: HdT[]) => void;
-  cargarCuadrillaEjemplo: () => void;
   opt: ConfigOptimizador;
   cambiarOpt: (f: (o: ConfigOptimizador) => void) => void;
   esEjemploTrono: boolean;
-  esEjemploCuadrilla: boolean;
   cargarTronoEjemplo: () => void;
   borrarTodo: () => void;
   elegirClaves: () => void;
@@ -34,7 +30,7 @@ export function Configuracion(p: Props) {
   const nSub = p.trono?.puestos.filter((q) => q.zona === 'submarino').length ?? 0;
   const pestanas: [PestanaConfig, string][] = [
     ['trono', 'Trono'], ['submarino', nSub ? `Submarino · ${nSub}` : 'Submarino'],
-    ['cuadrilla', `Cuadrilla · ${p.cuadrilla.length}`], ['confianza', 'Confianza'],
+    ['largo', '¿Varales óptimos?'], ['confianza', 'Confianza'],
   ];
   return (
     <div class="configuracion">
@@ -77,16 +73,8 @@ export function Configuracion(p: Props) {
         </div>
       )}
 
-      {p.pestana === 'cuadrilla' && (
-        <div class="config-cuadrilla">
-          <aside class="config-vista">
-            <Histograma cuadrilla={p.cuadrilla} />
-          </aside>
-          <div class="config-formularios">
-            <FormCuadrilla cuadrilla={p.cuadrilla} nPuestos={nPuestos} esEjemplo={p.esEjemploCuadrilla}
-              cambiar={p.cambiarCuadrilla} cargarEjemplo={p.cargarCuadrillaEjemplo} />
-          </div>
-        </div>
+      {p.pestana === 'largo' && (
+        <LargoVarales config={p.config} cuadrilla={p.cuadrilla} hayErrores={p.errores.length > 0} cambiar={p.cambiarConfig} />
       )}
 
       {p.pestana === 'confianza' && (

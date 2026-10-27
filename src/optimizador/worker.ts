@@ -5,16 +5,19 @@ import type { ConfigOptimizador, ConfigTrono, HdT, Trono } from '../geometria/ti
 import { construirTrono } from '../geometria/trono';
 import { construirModelo, type Modelo } from '../fem/modelo';
 import { precalcularRapido, type SolverRapido } from '../fem/rapido';
+import { estudiarVarales, type EstudioVarales } from './longitud';
 import { calcularCuadrante, evaluarAsignacion, type Resultado } from './optimizar';
 
 export type MensajeEntrada =
   | { tipo: 'rellenar'; config: ConfigTrono; cuadrilla: HdT[]; opt: ConfigOptimizador; colocados: number[] }
-  | { tipo: 'evaluar'; id: number; config: ConfigTrono; cuadrilla: HdT[]; opt: ConfigOptimizador; asignacion: number[] };
+  | { tipo: 'evaluar'; id: number; config: ConfigTrono; cuadrilla: HdT[]; opt: ConfigOptimizador; asignacion: number[] }
+  | { tipo: 'longitud'; config: ConfigTrono; cuadrilla: HdT[] };
 
 export type MensajeSalida =
   | { tipo: 'progreso'; fraccion: number; texto: string }
   | { tipo: 'resultado'; resultado: Resultado }
   | { tipo: 'evaluado'; id: number; resultado: Resultado }
+  | { tipo: 'longitud'; estudio: EstudioVarales }
   | { tipo: 'error'; mensaje: string; id?: number };
 
 const enviar = (m: MensajeSalida) => (self as unknown as Worker).postMessage(m);
@@ -35,6 +38,15 @@ self.onmessage = (e: MessageEvent<MensajeEntrada>) => {
       enviar({ tipo: 'evaluado', id: d.id, resultado: evaluarAsignacion(d.config, d.cuadrilla, d.opt, d.asignacion, cache) });
     } catch (err) {
       enviar({ tipo: 'error', id: d.id, mensaje: err instanceof Error ? err.message : String(err) });
+    }
+    return;
+  }
+  if (d.tipo === 'longitud') {
+    try {
+      const estudio = estudiarVarales(d.config, d.cuadrilla, (fraccion) => enviar({ tipo: 'progreso', fraccion, texto: 'Probando largos de varal…' }));
+      enviar({ tipo: 'longitud', estudio });
+    } catch (err) {
+      enviar({ tipo: 'error', mensaje: err instanceof Error ? err.message : String(err) });
     }
     return;
   }
