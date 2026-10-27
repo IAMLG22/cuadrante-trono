@@ -1,6 +1,6 @@
 # Cuadrante de trono
 
-Aplicación web estática (Vite + TypeScript + Preact) que calcula qué hombre de trono va en cada
+Aplicación web estática    (Vite + TypeScript + Preact) que calcula qué hombre de trono va en cada
 puesto para que el peso se reparta lo más igual posible.
 
 ```bash
