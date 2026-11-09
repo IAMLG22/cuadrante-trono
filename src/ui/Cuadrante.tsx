@@ -7,34 +7,21 @@ import type { HdT } from '../geometria/tipos';
 import { fmt, type FilaPuesto, type Vista } from '../io/tablas';
 import { mismoDestino, useArrastre, type Destino, type Origen } from './arrastre';
 
-export type ModoCuadrante = 'colocar' | 'claves';
-
 interface Props {
   v: Vista;
   cuadrilla: HdT[];
   resaltados: Set<string>;
-  modo: ModoCuadrante;
-  setModo: (m: ModoCuadrante) => void;
   onMover: (o: Origen, d: Destino) => void;
   onPrevisualizar: (o: Origen, d: Destino | null) => void;
-  onClave: (codigo: string) => void;
   herramientas?: ComponentChildren;
 }
 
 /** «Antonio García López» → «Antonio García». */
 export const nombreCorto = (n: string) => n.split(/\s+/).slice(0, 2).join(' ');
 
-export function Confianza({ n }: { n: number }) {
-  return (
-    <span class={`conf conf-${n}`} title={`Confianza ${n}`} aria-label={`Confianza ${n}`}>
-      {'●'.repeat(n)}<span class="conf-vacia">{'●'.repeat(3 - n)}</span>
-    </span>
-  );
-}
+type Orden = 'hombro' | 'nombre';
 
-type Orden = 'hombro' | 'nombre' | 'confianza';
-
-export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, onPrevisualizar, onClave, herramientas }: Props) {
+export function Cuadrante({ v, cuadrilla, resaltados, onMover, onPrevisualizar, herramientas }: Props) {
   const [elegido, setElegido] = useState<Origen | null>(null);
   const [filtro, setFiltro] = useState('');
   const [verTodos, setVerTodos] = useState(false);
@@ -47,15 +34,11 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
     return m;
   }, [v]);
 
-  const mover = (o: Origen, d: Destino) => { setElegido(null); if (modo === 'colocar') onMover(o, d); };
+  const mover = (o: Origen, d: Destino) => { setElegido(null); onMover(o, d); };
   const arr = useArrastre({
     alSoltar: mover,
     alPrevisualizar: onPrevisualizar,
     alPulsar: (o) => {
-      if (modo === 'claves') {
-        if ('puesto' in o) { const p = t.puestos.find((q) => q.ref === o.puesto); if (p) onClave(p.codigo); }
-        return;
-      }
       // Tocar a alguien y luego tocar el destino
       if (elegido && !mismoDestino(elegido, o)) {
         if ('puesto' in o) return mover(elegido, o);
@@ -71,8 +54,7 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
     let l = cuadrilla.filter((h) => (verTodos || !ubicacion.has(h.id)) && (!q || h.nombre.toLowerCase().includes(q)));
     l = [...l].sort((a, b) =>
       orden === 'hombro' ? b.hombro - a.hombro || a.nombre.localeCompare(b.nombre, 'es')
-        : orden === 'nombre' ? a.nombre.localeCompare(b.nombre, 'es')
-          : b.confianza - a.confianza || b.hombro - a.hombro);
+        : a.nombre.localeCompare(b.nombre, 'es'));
     return l;
   }, [cuadrilla, ubicacion, filtro, verTodos, orden]);
 
@@ -103,21 +85,20 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
 
   const celda = (f: FilaPuesto) => {
     const o = { puesto: f.puesto.ref };
-    const clases = ['celda', `c-${f.clase}`, f.puesto.clave ? 'clave' : '', resaltados.has(f.puesto.ref) ? 'resaltado' : '',
+    const clases = ['celda', `c-${f.clase}`, resaltados.has(f.puesto.ref) ? 'resaltado' : '',
       esObjetivo(o) ? 'objetivo' : '', esElegido(o) ? 'elegido' : ''];
     return (
       <div class={clases.join(' ')} data-puesto={f.puesto.ref} tabIndex={0} role="button"
         aria-label={`${f.puesto.codigo}: ${f.hdt ? `${f.hdt.nombre}, ${fmt(f.hdt.hombro)} cm` : 'vacío'}${f.carga !== null ? `, ${fmt(f.carga)} kg` : ''}`}
         onPointerDown={(e) => {
-          if (modo === 'colocar' && f.hdt) arr.empezar(e as unknown as PointerEvent, o, nombreCorto(f.hdt.nombre));
-          else arr.empezar(e as unknown as PointerEvent, o, '');
+          arr.empezar(e as unknown as PointerEvent, o, f.hdt ? nombreCorto(f.hdt.nombre) : '');
         }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); arrPulsar(o); } }}>
         <span class="c-codigo">{f.puesto.codigo}</span>
         {f.hdt && (
           <>
             <span class="c-nombre">{nombreCorto(f.hdt.nombre)}</span>
-            <span class="c-datos">{fmt(f.hdt.hombro)} <Confianza n={f.hdt.confianza} /></span>
+            <span class="c-datos">{fmt(f.hdt.hombro)} cm</span>
             {f.carga !== null && <span class={`c-carga t-${f.clase}`}>{fmt(f.carga, 0)} kg</span>}
           </>
         )}
@@ -132,7 +113,7 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
   };
 
   return (
-    <div class={`tablero modo-${modo}`}>
+    <div class="tablero">
       <aside class="gente" data-zona="lista" aria-label="Cuadrilla">
         <div class="gente-cabecera">
           <strong>Cuadrilla</strong>
@@ -147,7 +128,6 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
           <select value={orden} aria-label="Ordenar" onChange={(e) => setOrden(e.currentTarget.value as Orden)}>
             <option value="hombro">Por hombro</option>
             <option value="nombre">Por nombre</option>
-            <option value="confianza">Por confianza</option>
           </select>
         </div>
         <ul class="gente-lista">
@@ -156,14 +136,13 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
             const o = { hdt: h.id };
             return (
               <li class={`persona${donde ? ' colocada' : ''}${esElegido(o) ? ' elegido' : ''}`} data-hdt={h.id}
-                tabIndex={0} role="button" aria-label={`${h.nombre}, ${fmt(h.hombro)} cm, confianza ${h.confianza}`}
+                tabIndex={0} role="button" aria-label={`${h.nombre}, ${fmt(h.hombro)} cm`}
                 onPointerDown={(e) => arr.empezar(e as unknown as PointerEvent, o, nombreCorto(h.nombre))}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); arrPulsar(o); } }}>
                 <span class="p-nombre">{h.nombre}</span>
                 <span class="p-datos">
                   {donde && <span class="p-donde">{donde.puesto.codigo}</span>}
                   <span class="p-hombro">{fmt(h.hombro)}</span>
-                  <Confianza n={h.confianza} />
                 </span>
               </li>
             );
@@ -174,20 +153,12 @@ export function Cuadrante({ v, cuadrilla, resaltados, modo, setModo, onMover, on
 
       <section class="mesa-trabajo">
         <div class="barra-planta">
-          <div class="segmentado" role="radiogroup" aria-label="Modo">
-            <button type="button" role="radio" aria-checked={modo === 'colocar'} class={modo === 'colocar' ? 'activo' : ''} onClick={() => setModo('colocar')}>Colocar</button>
-            <button type="button" role="radio" aria-checked={modo === 'claves'} class={modo === 'claves' ? 'activo' : ''} onClick={() => setModo('claves')}>
-              Puestos clave <span class="contador">{t.puestos.filter((p) => p.clave).length}</span>
-            </button>
-          </div>
           <div class="herramientas">{herramientas}</div>
         </div>
         <p class="pista">
-          {modo === 'claves'
-            ? 'Toca los puestos que consideres clave (anillo dorado).'
-            : elegido
-              ? 'Ahora toca el puesto donde quieres ponerlo (o la lista para quitarlo).'
-              : 'Arrastra a cada HdT a su puesto, o tócalo y luego toca el puesto. Arrastra un puesto a la lista para dejarlo libre.'}
+          {elegido
+            ? 'Ahora toca el puesto donde quieres ponerlo (o la lista para quitarlo).'
+            : 'Arrastra a cada HdT a su puesto, o tócalo y luego toca el puesto. Arrastra un puesto a la lista para dejarlo libre.'}
         </p>
         <div class="rejilla-varales">
           <table class="cuadrante">

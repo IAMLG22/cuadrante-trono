@@ -7,7 +7,7 @@
 
 import { K_PERSONA } from '../fem/modelo';
 import type { Trono } from '../geometria/tipos';
-import { costeCabeceo, costeCargas, costeConfianza, type Evaluador } from './coste';
+import { costeCabeceo, costeCargas, type Evaluador } from './coste';
 import { alabeoLineal, cabeceoLineal, fuerzasLineales, type Lineal } from './linealizado';
 
 export interface OpcionesRefino {
@@ -46,8 +46,7 @@ export function refinar(
   let a = cabeceoLineal(lin, s);
   let b = alabeoLineal(lin, s);
   let cC = costeCargas(ev, F);
-  let cConf = costeConfianza(ev, asig, reservasIniciales);
-  let total = cC + cConf + costeCabeceo(ev, a, b);
+  let total = cC + costeCabeceo(ev, a, b);
 
   let mejor = total;
   const mejorAsig = Int32Array.from(asig);
@@ -115,14 +114,12 @@ export function refinar(
     }
     if (!valido) continue;
 
-    let da = 0, db = 0, dConf = 0;
+    let da = 0, db = 0;
     for (let c = 0; c < nc; c++) {
       dh[c] = alturasM[cp[c]] - s[cs[c]];
       da += lin.ga[cs[c]] * dh[c];
       db += lin.gb[cs[c]] * dh[c];
-      if (ev.clave[cs[c]]) dConf += ev.penalClave[cp[c]] - ev.penalClave[asig[cs[c]]];
     }
-    if (nc === 1) dConf += ev.penalReserva[p] - ev.penalReserva[q];
     // ΔF = k·Δs − k²·G·Δs
     for (let m = 0; m < N; m++) {
       let g = 0;
@@ -134,7 +131,7 @@ export function refinar(
 
     const cCn = costeCargas(ev, Ft);
     const an = a + da, bn = b + db;
-    const totalN = cCn + cConf + dConf + costeCabeceo(ev, an, bn);
+    const totalN = cCn + costeCabeceo(ev, an, bn);
     const delta = totalN - total;
     const temp = T0 * (1 - it / op.iteraciones) ** 2;
     if (delta < 0 || (temp > 0 && rnd() < Math.exp(-delta / temp))) {
@@ -145,7 +142,7 @@ export function refinar(
       }
       if (nc === 1) pos[p] = -1;
       const tmp = F; F = Ft; Ft = tmp;
-      a = an; b = bn; cC = cCn; cConf += dConf; total = totalN;
+      a = an; b = bn; cC = cCn; total = totalN;
       if (total < mejor - 1e-12) {
         mejor = total;
         mejorAsig.set(asig);
@@ -158,7 +155,7 @@ export function refinar(
   // Coste recalculado desde cero (evita la deriva numérica de las actualizaciones)
   const sf = Float64Array.from(mejorAsig, (p) => alturasM[p]);
   const Ff = fuerzasLineales(lin, sf);
-  const coste = costeCargas(ev, Ff) + costeConfianza(ev, mejorAsig, reservas) + costeCabeceo(ev, cabeceoLineal(lin, sf), alabeoLineal(lin, sf));
+  const coste = costeCargas(ev, Ff) + costeCabeceo(ev, cabeceoLineal(lin, sf), alabeoLineal(lin, sf));
   op.progreso?.(1);
   return { asig: mejorAsig, reservas, coste };
 }

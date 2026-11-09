@@ -13,7 +13,8 @@ export function Histograma({ cuadrilla }: { cuadrilla: HdT[] }) {
   for (const h of hs) cubos[Math.floor(h) - min].n++;
   const nMax = Math.max(...cubos.map((c) => c.n));
   const media = hs.reduce((a, b) => a + b, 0) / hs.length;
-  const porConf = [3, 2, 1].map((k) => cuadrilla.filter((h) => h.confianza === k).length);
+  const orden = [...hs].sort((a, b) => a - b);
+  const mediana = orden.length % 2 ? orden[(orden.length - 1) / 2] : (orden[orden.length / 2 - 1] + orden[orden.length / 2]) / 2;
 
   const W = 520, H = 170, mi = 28, md = 8, ms = 12, mb = 24;
   const ancho = (W - mi - md) / cubos.length;
@@ -28,7 +29,7 @@ export function Histograma({ cuadrilla }: { cuadrilla: HdT[] }) {
         <div class="cifra"><span class="cifra-etiqueta">HdT</span><span class="cifra-valor">{cuadrilla.length}</span></div>
         <div class="cifra"><span class="cifra-etiqueta">Media</span><span class="cifra-valor">{fmt(media)} cm</span></div>
         <div class="cifra"><span class="cifra-etiqueta">De … a</span><span class="cifra-valor">{fmt(Math.min(...hs))}–{fmt(Math.max(...hs))}</span></div>
-        <div class="cifra"><span class="cifra-etiqueta">Confianza 3 · 2 · 1</span><span class="cifra-valor">{porConf.join(' · ')}</span></div>
+        <div class="cifra"><span class="cifra-etiqueta">Mediana</span><span class="cifra-valor">{fmt(mediana)} cm</span></div>
       </div>
       <div class="perfil-lienzo">
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Histograma de alturas de hombro" onPointerLeave={() => setHover(null)}>

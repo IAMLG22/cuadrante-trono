@@ -1,21 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { construirTrono } from '../src/geometria/trono';
+import { calcularPesos, validarConfig } from '../src/geometria/trono';
 import { cuadrillaEjemplo, HOMBRO_MAX, HOMBRO_MIN, TALLAS_EJEMPLO, tronoEjemplo } from '../src/io/ejemplo';
+import { cuadrillaClasica, tronoClasico } from './datos';
 
 describe('datos de ejemplo', () => {
   const t = construirTrono(tronoEjemplo());
 
-  it('trono de 6 varales con 10 filas delante y 10 detrás en cada varal', () => {
-    expect(t.nVarales).toBe(6);
+  it('es el trono del Rocío: mesa de 4,80 × 3,48 m, varales de 13 m y unos 4.000 kg', () => {
+    const c = tronoEjemplo();
+    expect(validarConfig(c)).toEqual([]);
+    expect(c.mesa.largo).toBe(4.8);
+    expect(c.mesa.ancho).toBe(3.48);
+    expect(c.varales.largoDelante + c.mesa.largo + c.varales.largoDetras).toBeCloseTo(13, 9);
+    expect(Math.abs(calcularPesos(c).total - 4000)).toBeLessThan(50);
+  });
+
+  it('8 varales con 11 filas delante y 11 detrás, y la laceria bajo la mesa: unos 225 en total', () => {
+    expect(t.nVarales).toBe(8);
     for (const letra of t.letras) {
-      const p = t.puestos.filter((q) => q.codigo?.startsWith(letra));
-      expect(p.filter((q) => q.zona === 'delante').length).toBe(10);
-      expect(p.filter((q) => q.zona === 'detras').length).toBe(10);
+      const p = t.puestos.filter((q) => q.codigo?.startsWith(letra) && q.zona !== 'submarino');
+      expect(p.filter((q) => q.zona === 'delante').length).toBe(11);
+      expect(p.filter((q) => q.zona === 'detras').length).toBe(11);
     }
-    // 6 × 20 + 2 × 12 costeros + submarino en C y D (4 por varal)
-    expect(t.puestos.filter((p) => p.zona !== 'submarino').length).toBe(144);
-    expect(t.puestos.filter((p) => p.zona === 'submarino').map((p) => p.codigo)).toEqual(
-      ['C-S1', 'C-S2', 'C-S3', 'C-S4', 'D-S1', 'D-S2', 'D-S3', 'D-S4']);
+    // 8 × 22 + 2 × 12 costeros + laceria de 4 en cada uno de los 6 varales interiores
+    expect(t.puestos.filter((p) => p.zona !== 'submarino').length).toBe(200);
+    expect(t.puestos.filter((p) => p.zona === 'submarino').length).toBe(24);
+    expect(Math.abs(t.puestos.length - 225)).toBeLessThanOrEqual(1);
   });
 
   it('hay más HdT que puestos (algunos de reserva)', () => {
@@ -24,7 +35,7 @@ describe('datos de ejemplo', () => {
 
   it('tallas como en una cuadrilla real: el grueso entre 149 y 155, muchos de 148–149 y pocos altos', () => {
     const h = cuadrillaEjemplo().map((x) => x.hombro);
-    expect(h.length).toBe(180);
+    expect(h.length).toBe(250);
     expect(Math.min(...h)).toBeGreaterThanOrEqual(HOMBRO_MIN);
     expect(Math.max(...h)).toBeLessThanOrEqual(HOMBRO_MAX);
     const cuenta = (f: (x: number) => boolean) => h.filter(f).length;
@@ -39,13 +50,13 @@ describe('datos de ejemplo', () => {
 });
 
 describe('dirección de la inclinación', () => {
-  it('con la cuadrilla de ejemplo el trono no va picado y las puntas llevan a los más altos', async () => {
+  it('con la cuadrilla clásica el trono no va picado y las puntas llevan a los más altos', async () => {
     const { calcularCuadrante } = await import('../src/optimizador/optimizar');
     const { optimizadorPorDefecto } = await import('../src/io/ejemplo');
-    const c = tronoEjemplo(), cu = cuadrillaEjemplo(), t = construirTrono(c);
+    const c = tronoClasico(), cu = cuadrillaClasica(), t = construirTrono(c);
     const porId = new Map(cu.map((h) => [h.id, h.hombro]));
-    for (const prioridadConfianza of [0, 0.5, 1]) {
-      const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza });
+    {
+      const r = calcularCuadrante(c, cu, optimizadorPorDefecto());
       expect(r.inclinacionGrados).toBeGreaterThanOrEqual(-0.01);
       const media = (n: number) => {
         const hs = t.puestos.filter((p) => p.zona !== 'submarino' && p.numero === n).map((p) => porId.get(r.asignacion[p.idx])!);

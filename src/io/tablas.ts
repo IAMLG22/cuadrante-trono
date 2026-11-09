@@ -54,7 +54,7 @@ export interface Vista {
 }
 
 export function construirVista(d: DatosCalculo, asig: Asignacion, r: Resultado | null, trono?: Trono): Vista {
-  const t = trono ?? construirTrono(d.config, d.opt.confianza);
+  const t = trono ?? construirTrono(d.config);
   const porId = new Map(d.cuadrilla.map((h) => [h.id, h]));
   const usados = new Set<number>();
   const porPuesto = t.puestos.map((p): FilaPuesto => {
@@ -96,12 +96,12 @@ export const fmt = (v: number, dec = 1) => v.toLocaleString('es-ES', { minimumFr
 type Celda = string | number | null;
 
 export function tablaCuadrante(v: Vista): Celda[][] {
-  const filas: Celda[][] = [['Puesto', 'Nombre', 'Hombro (cm)', 'Confianza', 'Carga (kg)']];
+  const filas: Celda[][] = [['Puesto', 'Nombre', 'Hombro (cm)', 'Carga (kg)']];
   for (const f of [...v.filas].sort((a, b) => ordenPuesto(a.puesto, b.puesto))) {
-    filas.push([f.puesto.codigo, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.hdt?.confianza ?? null, f.carga]);
+    filas.push([f.puesto.codigo, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.carga]);
   }
-  for (const f of v.submarino) filas.push([`Submarino ${f.puesto.codigo}`, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.hdt?.confianza ?? null, f.carga]);
-  for (const h of v.reservas) filas.push(['Reserva', h.nombre, h.hombro, h.confianza, null]);
+  for (const f of v.submarino) filas.push([`Submarino ${f.puesto.codigo}`, f.hdt?.nombre ?? '(vacío)', f.hdt?.hombro ?? null, f.carga]);
+  for (const h of v.reservas) filas.push(['Reserva', h.nombre, h.hombro, null]);
   return filas;
 }
 
@@ -122,7 +122,7 @@ export function tablaPorVaral(v: Vista): Celda[][] {
 }
 
 export function tablaReserva(v: Vista): Celda[][] {
-  return [['Nombre', 'Hombro (cm)', 'Confianza'], ...v.reservas.map((h) => [h.nombre, h.hombro, h.confianza])];
+  return [['Nombre', 'Hombro (cm)'], ...v.reservas.map((h) => [h.nombre, h.hombro])];
 }
 
 export function tablaResumen(v: Vista): Celda[][] {
@@ -147,9 +147,6 @@ export function tablaResumen(v: Vista): Celda[][] {
     ['Alabeo (°)', r.alabeoGrados],
     ['Flecha punta delantera (mm)', r.flechaDelanteMm],
     ['Flecha punta trasera (mm)', r.flechaDetrasMm],
-    ['Puestos clave', r.confianza.clave],
-    ['Puestos clave con confianza 3', r.confianza.claveConf3],
-    ['Confianza 1 en puestos clave', r.confianza.conf1EnClave.join(', ') || 'Ninguno'],
   ];
   for (const c of r.cuesta.filas) {
     filas.push([`Fila 1, carga media (${c.caso}) (kg)`, c.delante]);

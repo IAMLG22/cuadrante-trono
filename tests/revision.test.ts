@@ -6,9 +6,9 @@ import { calcularCuadrante, evaluarAsignacion } from '../src/optimizador/optimiz
 import { revisar } from '../src/optimizador/revision';
 
 const c = tronoPrueba();
-const op = { ...optimizadorPorDefecto(), prioridadConfianza: 0 };
+const op = { ...optimizadorPorDefecto() };
 const cuad = cuadrillaPrueba();
-const t = construirTrono(c, op.confianza);
+const t = construirTrono(c);
 const base = calcularCuadrante(c, cuad, op);
 
 describe('puestos vacíos y fijados', () => {
@@ -45,24 +45,19 @@ describe('revisión', () => {
     expect(p.some((x) => x.titulo.startsWith('El trono va inclinado'))).toBe(false);
   });
 
-  it('detecta vacíos, cargas de más y confianza 1 en puestos clave', () => {
+  it('detecta vacíos y cargas de más', () => {
     const a = [...base.asignacion];
     a[100] = -1;
-    // Poner al más alto en la fila 10 (carga de más) y a un confianza 1 en A1 (clave)
+    // Poner al más alto en la fila 10 (carga de más)
     const alto = [...cuad].sort((x, y) => y.hombro - x.hombro)[0];
     const iAlto = a.indexOf(alto.id), i10 = t.puestos.find((q) => q.codigo === 'C10')!.idx;
     [a[iAlto], a[i10]] = [a[i10], a[iAlto]];
-    const c1 = cuad.find((h) => h.confianza === 1 && a.indexOf(h.id) >= 0)!;
-    const iC1 = a.indexOf(c1.id), iA1 = t.puestos.find((q) => q.codigo === 'A1')!.idx;
-    [a[iC1], a[iA1]] = [a[iA1], a[iC1]];
     const r = evaluarAsignacion(c, cuad, op, a);
     const p = revisar(t, r, cuad, op);
     const titulos = p.map((x) => x.titulo).join(' | ');
     expect(titulos).toMatch(/1 puesto sin cubrir/);
     expect(titulos).toMatch(/carga.? de más/);
-    expect(titulos).toMatch(/Confianza 1 en/);
     expect(p.find((x) => /de más/.test(x.titulo))!.puestos).toContain('C10');
-    expect(p.find((x) => /Confianza 1/.test(x.titulo))!.puestos).toContain('A1');
     expect(p[0].nivel).toBe('error');
   });
 });

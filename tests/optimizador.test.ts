@@ -12,7 +12,7 @@ describe('optimizador', () => {
 
   it('184 puestos en menos de 3 s, sin alabeo y dentro de la inclinación máxima', () => {
     const cuad = cuadrillaPrueba();
-    const r = calcularCuadrante(c, cuad, { ...op, prioridadConfianza: 0 });
+    const r = calcularCuadrante(c, cuad, { ...op });
     console.log('tiempo', r.tiempoMs.toFixed(0), 'ms', JSON.stringify(r.resumen), 'incl', r.inclinacionGrados, 'alabeo', r.alabeoGrados);
     expect(r.tiempoMs).toBeLessThan(3000);
     expect(Math.abs(r.inclinacionGrados)).toBeLessThanOrEqual(1.01);
@@ -24,7 +24,7 @@ describe('optimizador', () => {
 
   it('mejora claramente a una asignación al azar', () => {
     const cuad = cuadrillaPrueba();
-    const r = calcularCuadrante(c, cuad, { ...op, prioridadConfianza: 0 });
+    const r = calcularCuadrante(c, cuad, { ...op });
     const t = construirTrono(c);
     const m = construirModelo(t);
     const azar = aleatorio(99);
@@ -35,17 +35,9 @@ describe('optimizador', () => {
     expect(r.resumen.desviacionTipica).toBeLessThan(0.35 * r.cargaIdeal);
   });
 
-  it('con prioridad de confianza máxima se cubren más puestos clave con confianza 3', () => {
-    const cuad = cuadrillaPrueba();
-    const r = calcularCuadrante(c, cuad, { ...op, prioridadConfianza: 1 });
-    console.log('confianza', JSON.stringify(r.confianza), 'sin', r.sinConfianza?.claveConf3, 'sd', r.resumen.desviacionTipica, r.sinConfianza?.desviacionTipica);
-    expect(r.confianza.claveConf3).toBeGreaterThan(r.sinConfianza!.claveConf3);
-    expect(r.confianza.claveConf1).toBeLessThanOrEqual(3);
-  });
-
   it('si sobra gente elige reservas y no se repite nadie', () => {
     const cuad = cuadrillaPrueba(202, 7);
-    const r = calcularCuadrante(c, cuad, { ...op, prioridadConfianza: 0.3 });
+    const r = calcularCuadrante(c, cuad, { ...op });
     expect(r.reservas.length).toBe(18);
     expect(new Set([...r.asignacion, ...r.reservas]).size).toBe(202);
     console.log('reservas', r.tiempoMs.toFixed(0), 'ms', r.resumen.desviacionTipica);
@@ -63,9 +55,9 @@ describe('optimizador', () => {
     const w = perfilIdeal(m, Fid).w;
     // Cuadrilla barajada con los hombros exactos del perfil ideal
     const r = aleatorio(3);
-    const cuad = Array.from(w, (wi, i) => ({ id: i + 1, nombre: 'P' + i, hombro: 125 + (wi + Fid / K_PERSONA) * 100, confianza: 3 as const }))
+    const cuad = Array.from(w, (wi, i) => ({ id: i + 1, nombre: 'P' + i, hombro: 125 + (wi + Fid / K_PERSONA) * 100 }))
       .map((h) => ({ h, k: r() })).sort((a, b) => a.k - b.k).map((x) => x.h);
-    const res = calcularCuadrante(c, cuad, { ...op, prioridadConfianza: 0 });
+    const res = calcularCuadrante(c, cuad, { ...op });
     expect(res.resumen.max - res.resumen.min).toBeLessThan(0.5);
   });
 });

@@ -228,7 +228,6 @@ interface CasoOpt {
   nombre: string;
   caso: Caso;
   cuadrilla: TipoCuadrilla;
-  prioridad: number;
 }
 
 // Una selección que cubre 4/6/8 varales, voladizos iguales y distintos, y los tres tipos de cuadrilla
@@ -236,16 +235,15 @@ const CASOS_OPT: CasoOpt[] = [];
 CASOS.forEach((caso, i) => {
   if (i % 3 !== 0) return;
   const cuadrilla = (['igualada', 'normal', 'igualada+reservas'] as const)[(i / 3) % 3];
-  const prioridad = [0, 0.5, 1][(i / 3) % 3 === 2 ? 1 : ((i / 3) % 2) * 2 / 2];
-  CASOS_OPT.push({ nombre: `${caso.nombre} · cuadrilla ${cuadrilla} · prioridad ${prioridad}`, caso, cuadrilla, prioridad });
+  CASOS_OPT.push({ nombre: `${caso.nombre} · cuadrilla ${cuadrilla}`, caso, cuadrilla });
 });
 
-describe.each(CASOS_OPT)('optimizador: $nombre', ({ caso, cuadrilla, prioridad }) => {
+describe.each(CASOS_OPT)('optimizador: $nombre', ({ caso, cuadrilla }) => {
   const t = construirTrono(caso.config);
   const N = t.puestos.length;
   const cuad = cuadrilla === 'normal' ? cuadrillaNormal(N + 4)
     : cuadrillaIgualada(t, cuadrilla === 'igualada+reservas' ? 10 : 0);
-  const op = { ...optimizadorPorDefecto(), prioridadConfianza: prioridad };
+  const op = { ...optimizadorPorDefecto() };
   let r: Resultado;
   const inicio = performance.now();
   r = calcularCuadrante(caso.config, cuad, op);
@@ -333,7 +331,7 @@ describe('casos límite', () => {
     const t = construirTrono(c);
     expect(t.filasDelante).toBe(1);
     const cu = cuadrillaIgualada(t);
-    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza: 0 });
+    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto() });
     expect(new Set(r.asignacion).size).toBe(t.puestos.length);
     expect(Math.abs(r.cargasKg.reduce((a, b) => a + b, 0) - r.pesoTotal)).toBeLessThan(1e-4);
   });
@@ -362,7 +360,7 @@ describe('casos límite', () => {
     c.quitacimbres.activo = false;
     const t = construirTrono(c);
     const cu = cuadrillaIgualada(t);
-    const base = { ...optimizadorPorDefecto(), prioridadConfianza: 0 };
+    const base = { ...optimizadorPorDefecto() };
     const nivelado = calcularCuadrante(c, cu, base);
     expect(nivelado.inclinacionGrados).toBeGreaterThanOrEqual(-UMBRAL_PICADO_GRADOS);
     const libre = calcularCuadrante(c, cu, { ...base, permitirPicado: true });
@@ -376,7 +374,7 @@ describe('casos límite', () => {
     const c = tronoBase();
     const t = construirTrono(c);
     const cu = generarCuadrilla(t.puestos.length, 5, () => 155);
-    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza: 0 });
+    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto() });
     expect(r.inclinacionGrados).toBeGreaterThanOrEqual(-0.01);
     expect(Math.abs(r.cargasKg.reduce((a, b) => a + b, 0) - r.pesoTotal)).toBeLessThan(1e-4);
   });
@@ -385,7 +383,7 @@ describe('casos límite', () => {
     const c = tronoBase();
     const t = construirTrono(c);
     const cu = cuadrillaIgualada(t);
-    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto(), prioridadConfianza: 0 });
+    const r = calcularCuadrante(c, cu, { ...optimizadorPorDefecto() });
     const mitad = r.asignacion.map((id, i) => (i % 2 === 0 ? id : -1));
     const e = evaluarAsignacion(c, cu, optimizadorPorDefecto(), mitad);
     expect(e.vacios).toBe(Math.floor(t.puestos.length / 2));

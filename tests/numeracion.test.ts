@@ -36,19 +36,6 @@ describe('numeración de puestos', () => {
     expect(b7.espejo).toBe(g7.idx);
   });
 
-  it('puestos clave: 2 filas exteriores y las 4 esquinas', () => {
-    const claves = t.puestos.filter((p) => p.clave).map((p) => p.codigo);
-    expect(claves).toContain('A1');
-    expect(claves).toContain('D2');
-    expect(claves).toContain('E31');
-    expect(claves).toContain('H32');
-    expect(claves).toContain('A11');
-    expect(claves).toContain('A21');
-    expect(claves).not.toContain('A12');
-    expect(claves).not.toContain('C3');
-    expect(claves.length).toBe(4 * 8 + 4);
-  });
-
   it('las filas se reparten por igual en el voladizo, con medio tramo junto a la mesa y en la punta', () => {
     expect(separacionFilas(4.5, 10)).toBeCloseTo(0.45, 12);
     const d = distanciasFilas(4.5, 10);

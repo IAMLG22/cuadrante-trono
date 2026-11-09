@@ -14,7 +14,7 @@ const conSubmarino = (varales: number[], porVaral = 4, numero: 4 | 6 | 8 = 6): C
 };
 
 const cuadrilla = (n: number) => generarCuadrilla(n, 9, (r) => Math.round((153 + 3 * normal(r)) * 2) / 2);
-const op = { ...optimizadorPorDefecto(), prioridadConfianza: 0 };
+const op = { ...optimizadorPorDefecto() };
 
 describe('submarino: geometría', () => {
   it('C y D con 4 por varal: 8 puestos bajo la mesa, repartidos a lo largo de ella', () => {

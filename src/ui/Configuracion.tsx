@@ -1,13 +1,13 @@
-// Apartado «Configuración»: pantalla completa para el trono, el submarino, el largo de los varales y la confianza.
+// Apartado «Configuración»: pantalla completa para el trono, el submarino, el largo de los varales y el cálculo.
 
-import type { ConfigOptimizador, ConfigTrono, HdT, Trono } from '../geometria/tipos';
+import type { ConfigOptimizador, ConfigTrono, CuadrillaTipo, HdT, Trono } from '../geometria/tipos';
 import { FormOptimizador } from './FormOptimizador';
 import { FormSubmarino } from './FormSubmarino';
 import { FormTrono } from './FormTrono';
 import { LargoVarales } from './LargoVarales';
 import { VistaTrono } from './VistaTrono';
 
-export type PestanaConfig = 'trono' | 'submarino' | 'largo' | 'confianza';
+export type PestanaConfig = 'trono' | 'submarino' | 'largo' | 'calculo';
 
 interface Props {
   pestana: PestanaConfig;
@@ -17,12 +17,13 @@ interface Props {
   trono: Trono | null;
   errores: string[];
   cuadrilla: HdT[];
+  cuadrillaTipo: CuadrillaTipo;
+  cambiarTipo: (f: (t: CuadrillaTipo) => void) => void;
   opt: ConfigOptimizador;
   cambiarOpt: (f: (o: ConfigOptimizador) => void) => void;
   esEjemploTrono: boolean;
   cargarTronoEjemplo: () => void;
   borrarTodo: () => void;
-  elegirClaves: () => void;
 }
 
 export function Configuracion(p: Props) {
@@ -30,7 +31,7 @@ export function Configuracion(p: Props) {
   const nSub = p.trono?.puestos.filter((q) => q.zona === 'submarino').length ?? 0;
   const pestanas: [PestanaConfig, string][] = [
     ['trono', 'Trono'], ['submarino', nSub ? `Submarino · ${nSub}` : 'Submarino'],
-    ['largo', '¿Varales óptimos?'], ['confianza', 'Confianza'],
+    ['largo', '¿Varales óptimos?'], ['calculo', 'Cálculo'],
   ];
   return (
     <div class="configuracion">
@@ -74,12 +75,13 @@ export function Configuracion(p: Props) {
       )}
 
       {p.pestana === 'largo' && (
-        <LargoVarales config={p.config} cuadrilla={p.cuadrilla} hayErrores={p.errores.length > 0} cambiar={p.cambiarConfig} />
+        <LargoVarales config={p.config} cuadrilla={p.cuadrilla} tipo={p.cuadrillaTipo} cambiarTipo={p.cambiarTipo}
+          hayErrores={p.errores.length > 0} cambiar={p.cambiarConfig} />
       )}
 
-      {p.pestana === 'confianza' && (
-        <div class="config-confianza">
-          <FormOptimizador opt={p.opt} cambiar={p.cambiarOpt} nClave={p.trono?.puestos.filter((q) => q.clave).length ?? 0} elegirEnPlanta={p.elegirClaves} />
+      {p.pestana === 'calculo' && (
+        <div class="config-calculo">
+          <FormOptimizador opt={p.opt} cambiar={p.cambiarOpt} />
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@
 // (los más altos donde el objetivo es mayor), respetando las parejas espejo.
 
 import type { Trono } from '../geometria/tipos';
-import { costeCabeceo, costeCargas, costeConfianza, type Evaluador } from './coste';
+import { costeCabeceo, costeCargas, type Evaluador } from './coste';
 import { alabeoLineal, cabeceoLineal, fuerzasLineales, type Lineal } from './linealizado';
 
 /** Unidad de simetría: pareja espejo [izquierda, derecha] o puesto único en el eje. */
@@ -65,7 +65,7 @@ export function barrer(
       if (fijo) for (let i = 0; i < N; i++) if (fijo[i] >= 0) asig[i] = fijo[i];
       for (let i = 0; i < N; i++) s[i] = alturasM[asig[i]];
       fuerzasLineales(lin, s, F);
-      const coste = costeCargas(ev, F) + costeCabeceo(ev, cabeceoLineal(lin, s), alabeoLineal(lin, s)) + costeConfianza(ev, asig, reservas);
+      const coste = costeCargas(ev, F) + costeCabeceo(ev, cabeceoLineal(lin, s), alabeoLineal(lin, s));
       if (!mejor || coste < mejor.coste) mejor = { asig, coste };
     }
   }

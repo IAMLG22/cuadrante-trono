@@ -3,10 +3,10 @@
 import { useState } from 'preact/hooks';
 import { fmt, matrizPorVaral, ordenPuesto, type FilaPuesto, type Vista } from '../io/tablas';
 
-type Columna = 'puesto' | 'nombre' | 'hombro' | 'confianza' | 'carga';
+type Columna = 'puesto' | 'nombre' | 'hombro' | 'carga';
 
 const COLUMNAS: [Columna, string][] = [
-  ['puesto', 'Puesto'], ['nombre', 'Nombre'], ['hombro', 'Hombro'], ['confianza', 'Confianza'], ['carga', 'Carga'],
+  ['puesto', 'Puesto'], ['nombre', 'Nombre'], ['hombro', 'Hombro'], ['carga', 'Carga'],
 ];
 
 function comparar(col: Columna) {
@@ -16,7 +16,6 @@ function comparar(col: Columna) {
       case 'puesto': return ordenPuesto(a.puesto, b.puesto) || num(b.hdt?.hombro) - num(a.hdt?.hombro);
       case 'nombre': return (a.hdt?.nombre ?? '￿').localeCompare(b.hdt?.nombre ?? '￿', 'es');
       case 'hombro': return num(a.hdt?.hombro) - num(b.hdt?.hombro);
-      case 'confianza': return num(a.hdt?.confianza) - num(b.hdt?.confianza);
       case 'carga': return num(a.carga) - num(b.carga);
     }
   };
@@ -33,7 +32,7 @@ export function Lista({ v }: { v: Vista }) {
         <thead>
           <tr>
             {COLUMNAS.map(([c, t]) => (
-              <th class={c === 'hombro' || c === 'confianza' || c === 'carga' ? 'num' : ''} aria-sort={col === c ? (asc ? 'ascending' : 'descending') : 'none'}>
+              <th class={c === 'hombro' || c === 'carga' ? 'num' : ''} aria-sort={col === c ? (asc ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" class="orden" onClick={() => (col === c ? setAsc(!asc) : (setCol(c), setAsc(true)))}>
                   {t} {col === c ? (asc ? '▲' : '▼') : ''}
                 </button>
@@ -43,11 +42,10 @@ export function Lista({ v }: { v: Vista }) {
         </thead>
         <tbody>
           {filas.map((f) => (
-            <tr class={`${f.puesto.clave ? 'fila-clave' : ''}${f.hdt ? '' : ' fila-vacia'}`}>
+            <tr class={f.hdt ? '' : 'fila-vacia'}>
               <td class="codigo">{f.puesto.codigo}</td>
               <td>{f.hdt?.nombre ?? 'Vacío'}</td>
               <td class="num">{f.hdt ? fmt(f.hdt.hombro) : ''}</td>
-              <td class="num">{f.hdt?.confianza ?? ''}</td>
               <td class={`num carga c-${f.clase}`}>{f.carga !== null ? `${fmt(f.carga)} kg` : '—'}</td>
             </tr>
           ))}
@@ -71,11 +69,11 @@ export function PorVaral({ v, conCarga = true }: { v: Vista; conCarga?: boolean 
             <th class="n">{i + 1}</th>
             {fila.map((f) =>
               !f ? <td class="cortado">—</td> : (
-                <td class={f.puesto.clave ? 'clave' : ''}>
+                <td>
                   <span class="nombre">{f.hdt?.nombre ?? ''}</span>
                   {f.hdt && (
                     <span class="detalle">
-                      {fmt(f.hdt.hombro)} cm · C{f.hdt.confianza}
+                      {fmt(f.hdt.hombro)} cm
                       {conCarga && f.carga !== null && <> · {fmt(f.carga, 0)} kg</>}
                     </span>
                   )}
@@ -96,10 +94,10 @@ export function Listas({ v }: { v: Vista }) {
         <section>
           <h3>Submarino ({v.submarino.filter((f) => f.hdt).length} / {v.submarino.length})</h3>
           <table class="tabla">
-            <thead><tr><th>Puesto</th><th>Nombre</th><th class="num">Hombro</th><th class="num">Confianza</th></tr></thead>
+            <thead><tr><th>Puesto</th><th>Nombre</th><th class="num">Hombro</th></tr></thead>
             <tbody>
               {v.submarino.map((f) => (
-                <tr><td class="codigo">{f.puesto.codigo}</td><td>{f.hdt?.nombre ?? '—'}</td><td class="num">{f.hdt ? fmt(f.hdt.hombro) : ''}</td><td class="num">{f.hdt?.confianza ?? ''}</td></tr>
+                <tr><td class="codigo">{f.puesto.codigo}</td><td>{f.hdt?.nombre ?? '—'}</td><td class="num">{f.hdt ? fmt(f.hdt.hombro) : ''}</td></tr>
               ))}
             </tbody>
           </table>
@@ -108,10 +106,10 @@ export function Listas({ v }: { v: Vista }) {
       <section>
         <h3>Reserva ({v.reservas.length})</h3>
         <table class="tabla">
-          <thead><tr><th>Nombre</th><th class="num">Hombro</th><th class="num">Confianza</th></tr></thead>
+          <thead><tr><th>Nombre</th><th class="num">Hombro</th></tr></thead>
           <tbody>
             {v.reservas.map((h) => (
-              <tr><td>{h.nombre}</td><td class="num">{fmt(h.hombro)}</td><td class="num">{h.confianza}</td></tr>
+              <tr><td>{h.nombre}</td><td class="num">{fmt(h.hombro)}</td></tr>
             ))}
           </tbody>
         </table>

@@ -48,16 +48,6 @@ export interface Resultado {
   flechaDelanteMm: number;
   flechaDetrasMm: number;
   cuesta: Cuesta;
-  confianza: {
-    clave: number;
-    claveConf3: number;
-    claveConf2: number;
-    claveConf1: number;
-    claveVacios: number;
-    conf1EnClave: string[];
-  };
-  /** Mismo cálculo sin tener en cuenta la confianza (si la prioridad es > 0). */
-  sinConfianza: ResumenCarga & { claveConf3: number } | null;
   iteracionesContacto: number;
   tiempoMs: number;
   /** Huella de los datos con los que se calculó. */
@@ -93,7 +83,7 @@ export function resumirCargas(cargasKg: number[], idealKg: number): ResumenCarga
   };
 }
 
-/** Pasos 2–4 y 6 con una prioridad de confianza dada. */
+/** Pasos 2–4 y 6. */
 function optimizarInterno(
   t: Trono, m: Modelo, rapido: SolverRapido, cuadrilla: HdT[], op: ConfigOptimizador, progreso: Progreso, p0: number, p1: number,
   fijo: Int32Array,
@@ -103,7 +93,7 @@ function optimizarInterno(
   const alturasM = Float64Array.from(cuadrilla, (h) => h.hombro / 100);
   const perfil = perfilIdeal(m, FidN).w;
   const lin = linealDesdeRapido(rapido);
-  const ev = crearEvaluador(t, cuadrilla, op, FidN);
+  const ev = crearEvaluador(t, op, FidN);
   // Solo se reparten los puestos libres; si en una pareja espejo hay uno fijado, el otro va suelto.
   const unidades = unidadesSimetria(t).flatMap((u): Unidad[] => {
     const libres = u.filter((i) => fijo[i] < 0);
@@ -116,12 +106,11 @@ function optimizarInterno(
   const tramo = (a: number, b: number) => (f: number) => progreso(p0 + (p1 - p0) * (a + (b - a) * f), 'Buscando el mejor cuadrante…');
 
   // Subconjuntos candidatos: quitar t de los más altos y R − t de los más bajos.
-  // A igualdad de altura se prefiere dejar de reserva a los de menor confianza.
   const idx = cuadrilla.map((_, i) => i).filter((i) => !yaColocados.has(i));
   const R = idx.length - libresN;
   if (R < 0) throw new ErrorCuadrilla(`Faltan ${-R} HdT para cubrir los ${libresN} puestos libres.`);
-  const asc = [...idx].sort((a, b) => alturasM[a] - alturasM[b] || cuadrilla[a].confianza - cuadrilla[b].confianza);
-  const desc = [...idx].sort((a, b) => alturasM[b] - alturasM[a] || cuadrilla[a].confianza - cuadrilla[b].confianza);
+  const asc = [...idx].sort((a, b) => alturasM[a] - alturasM[b] || a - b);
+  const desc = [...idx].sort((a, b) => alturasM[b] - alturasM[a] || a - b);
   const nCand = Math.min(R + 1, 9);
   const ts = [...new Set(Array.from({ length: nCand }, (_, i) => (nCand === 1 ? 0 : Math.round((i * R) / (nCand - 1)))))];
   const candidatos = ts.map((tAltos) => {
@@ -166,7 +155,7 @@ export function calcularCuadrante(
   c: ConfigTrono, cuadrilla: HdT[], op: ConfigOptimizador, progreso: Progreso = () => {}, colocados?: number[],
 ): Resultado {
   const inicio = performance.now();
-  const t = construirTrono(c, op.confianza);
+  const t = construirTrono(c);
   const N = t.puestos.length;
   const indice = new Map(cuadrilla.map((h, i) => [h.id, i]));
   const fijo = Int32Array.from(t.puestos, (p) => indice.get(colocados?.[p.idx] ?? -1) ?? -1);
@@ -181,25 +170,14 @@ export function calcularCuadrante(
 
   progreso(0.01, 'Precalculando el modelo linealizado…');
   const rapido = precalcularRapido(m);
-  const conConf = op.prioridadConfianza > 0;
-  const principal = optimizarInterno(t, m, rapido, cuadrilla, op, progreso, 0.02, conConf ? 0.6 : 0.92, fijo);
+  const principal = optimizarInterno(t, m, rapido, cuadrilla, op, progreso, 0.02, 0.92, fijo);
 
   // Paso 5: comprobación con el modelo exacto con contacto
-  progreso(conConf ? 0.6 : 0.92, 'Comprobando con el modelo exacto…');
-  let sinConfianza: Resultado['sinConfianza'] = null;
-  if (conConf) {
-    const base = optimizarInterno(t, m, rapido, cuadrilla, { ...op, prioridadConfianza: 0 }, progreso, 0.62, 0.95, fijo);
-    const hb = Float64Array.from(base.asig, (p) => cuadrilla[p].hombro / 100);
-    const sb = resolverRapido(rapido, hb);
-    sinConfianza = {
-      ...resumirCargas(Array.from(sb.F, (F) => F / GRAV), idealKg),
-      claveConf3: t.puestos.filter((p) => p.clave && cuadrilla[base.asig[p.idx]].confianza === 3).length,
-    };
-  }
+  progreso(0.92, 'Comprobando con el modelo exacto…');
   progreso(0.96, 'Comprobando la cuesta…');
   const analisis = analizar(t, m, rapido, cuadrilla, principal.asig, principal.reservas);
   progreso(1, 'Listo');
-  return { ...analisis, sinConfianza, tiempoMs: performance.now() - inicio, huella: huellaDatos(c, cuadrilla, op) };
+  return { ...analisis, tiempoMs: performance.now() - inicio, huella: huellaDatos(c, cuadrilla, op) };
 }
 
 /**
@@ -211,7 +189,7 @@ export function evaluarAsignacion(
   modelo?: { t: Trono; m: Modelo; rapido: SolverRapido },
 ): Resultado {
   const inicio = performance.now();
-  const t = modelo?.t ?? construirTrono(c, op.confianza);
+  const t = modelo?.t ?? construirTrono(c);
   const m = modelo?.m ?? construirModelo(t);
   const rapido = modelo?.rapido ?? precalcularRapido(m);
   const indice = new Map(cuadrilla.map((h, i) => [h.id, i]));
@@ -219,12 +197,12 @@ export function evaluarAsignacion(
   const usados = new Set(asig);
   const reservas = cuadrilla.map((_, i) => i).filter((i) => !usados.has(i));
   const analisis = analizar(t, m, rapido, cuadrilla, asig, reservas);
-  return { ...analisis, sinConfianza: null, tiempoMs: performance.now() - inicio, huella: huellaDatos(c, cuadrilla, op) };
+  return { ...analisis, tiempoMs: performance.now() - inicio, huella: huellaDatos(c, cuadrilla, op) };
 }
 
-type Analisis = Omit<Resultado, 'sinConfianza' | 'tiempoMs' | 'huella'>;
+type Analisis = Omit<Resultado, 'tiempoMs' | 'huella'>;
 
-/** Cargas, resumen, cuesta y confianza de una asignación (índices de la cuadrilla). */
+/** Cargas, resumen y cuesta de una asignación (índices de la cuadrilla). */
 function analizar(t: Trono, m: Modelo, rapido: SolverRapido, cuadrilla: HdT[], asig: Int32Array, reservas: number[]): Analisis {
   const N = t.puestos.length;
   const ocupados = t.puestos.filter((p) => asig[p.idx] >= 0);
@@ -246,8 +224,6 @@ function analizar(t: Trono, m: Modelo, rapido: SolverRapido, cuadrilla: HdT[], a
     const v = m.puntas.map((p, i) => (p.lado === lado ? flechas[i] : NaN)).filter((x) => !Number.isNaN(x));
     return (v.reduce((a, b) => a + b, 0) / v.length) * 1000;
   };
-  const claves = t.puestos.filter((p) => p.clave);
-  const confDe = (p: { idx: number }) => (asig[p.idx] >= 0 ? cuadrilla[asig[p.idx]].confianza : 0);
   const hombroIdealCm = Array.from(sol.w, (w) => (w + FidN / K_PERSONA) * 100);
   return {
     asignacion: Array.from(asig, (p) => (p >= 0 ? cuadrilla[p].id : -1)),
@@ -263,14 +239,6 @@ function analizar(t: Trono, m: Modelo, rapido: SolverRapido, cuadrilla: HdT[], a
     flechaDelanteMm: media('delante'),
     flechaDetrasMm: media('detras'),
     cuesta,
-    confianza: {
-      clave: claves.length,
-      claveConf3: claves.filter((p) => confDe(p) === 3).length,
-      claveConf2: claves.filter((p) => confDe(p) === 2).length,
-      claveConf1: claves.filter((p) => confDe(p) === 1).length,
-      claveVacios: claves.filter((p) => confDe(p) === 0).length,
-      conf1EnClave: claves.filter((p) => confDe(p) === 1).map((p) => p.codigo),
-    },
     iteracionesContacto: sol.iteraciones,
   };
 }

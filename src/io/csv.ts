@@ -41,7 +41,7 @@ function detectarSeparador(lineas: string[]): string {
 const normalizar = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 /**
- * Columnas esperadas: Nombre, Altura de hombro (cm), Confianza (1–3).
+ * Columnas esperadas: Nombre, Altura de hombro (cm). Las demás columnas se ignoran.
  * La fila de cabecera es opcional; si existe, se usa para localizar las columnas.
  */
 export function importarCuadrilla(texto: string): Importacion {
@@ -51,22 +51,19 @@ export function importarCuadrilla(texto: string): Importacion {
   const sep = detectarSeparador(lineas);
   let filas = lineas.map((l) => separar(l, sep));
 
-  let cNombre = 0, cHombro = 1, cConf = 2;
+  let cNombre = 0, cHombro = 1;
   const cab = filas[0].map(normalizar);
   const pareceCabecera = filas[0].length > 1 && Number.isNaN(numero(filas[0][1] ?? ''));
   if (pareceCabecera) {
     const buscar = (claves: string[]) => cab.findIndex((c) => claves.some((k) => c.includes(k)));
     const n = buscar(['nombre', 'name']);
     const h = buscar(['hombro', 'altura', 'talla']);
-    const c = buscar(['confianza', 'conf']);
     if (n >= 0) cNombre = n;
     if (h >= 0) cHombro = h;
-    cConf = c; // -1 si no hay columna de confianza
     filas = filas.slice(1);
   }
 
   const cuadrilla: HdT[] = [];
-  let sinConfianza = 0;
   filas.forEach((f, i) => {
     const linea = i + (pareceCabecera ? 2 : 1);
     const nombre = (f[cNombre] ?? '').trim();
@@ -78,16 +75,8 @@ export function importarCuadrilla(texto: string): Importacion {
     }
     if (hombro < 3) hombro *= 100; // venía en metros
     if (hombro < 80 || hombro > 220) avisos.push(`Línea ${linea}: altura de hombro poco habitual (${hombro} cm).`);
-    const confTxt = cConf >= 0 ? (f[cConf] ?? '').trim() : '';
-    let confianza = Math.round(numero(confTxt));
-    if (!(confianza >= 1 && confianza <= 3)) {
-      if (confTxt !== '') avisos.push(`Línea ${linea}: confianza «${confTxt}» no válida, se usa 2.`);
-      else sinConfianza++;
-      confianza = 2;
-    }
-    cuadrilla.push({ id: cuadrilla.length + 1, nombre: nombre || `HdT ${cuadrilla.length + 1}`, hombro, confianza: confianza as 1 | 2 | 3 });
+    cuadrilla.push({ id: cuadrilla.length + 1, nombre: nombre || `HdT ${cuadrilla.length + 1}`, hombro });
   });
-  if (sinConfianza > 0) avisos.push(`${sinConfianza} HdT sin confianza: se les ha puesto 2.`);
   return { cuadrilla, avisos };
 }
 

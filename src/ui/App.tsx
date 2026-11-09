@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { ConfigOptimizador, ConfigTrono, HdT } from '../geometria/tipos';
-import { clavesEfectivas, construirTrono, validarConfig } from '../geometria/trono';
+import type { ConfigOptimizador, ConfigTrono, CuadrillaTipo, HdT } from '../geometria/tipos';
+import { construirTrono, validarConfig } from '../geometria/trono';
 import { cargarEstado, estadoEjemplo, guardarEstado, type Estado } from '../io/almacenamiento';
 import { cuadrillaEjemplo, tronoEjemplo } from '../io/ejemplo';
 import { exportarCsv, exportarCsvPorVaral, exportarXlsx } from '../io/exportar';
@@ -9,12 +9,12 @@ import { asignacionDesdeResultado, asignacionPorIndice, construirVista, type Asi
 import type { Resultado } from '../optimizador/optimizar';
 import { revisar } from '../optimizador/revision';
 import type { MensajeEntrada, MensajeSalida } from '../optimizador/worker';
-import { Cuadrante, type ModoCuadrante } from './Cuadrante';
+import { Cuadrante } from './Cuadrante';
 import { Configuracion, type PestanaConfig } from './Configuracion';
 import { FormCuadrilla } from './FormCuadrilla';
 import { Histograma } from './Histograma';
 import { Impresion } from './Impresion';
-import { Planta, type ModoPlanta } from './Planta';
+import { Planta } from './Planta';
 import { Indicadores, Resumen } from './Resumen';
 import { Revision } from './Revision';
 import { Lista } from './Tablas';
@@ -30,8 +30,6 @@ export function App() {
   const [seccion, setSeccion] = useState<Seccion>('cuadrante');
   const [pConfig, setPConfig] = useState<PestanaConfig>('trono');
   const [pRes, setPRes] = useState<PestanaRes>('cuadrante');
-  const [modoCuadrante, setModoCuadrante] = useState<ModoCuadrante>('colocar');
-  const [modoPlanta, setModoPlanta] = useState<ModoPlanta>('mover');
   const [progreso, setProgreso] = useState<{ fraccion: number; texto: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [evaluacion, setEvaluacion] = useState<{ resultado: Resultado | null; error: string | null }>({ resultado: null, error: null });
@@ -55,10 +53,12 @@ export function App() {
     setEstado((e) => { const config = clonar(e.config); f(config); return { ...e, config, ejemploTrono: false }; });
   const cambiarOpt = (f: (o: ConfigOptimizador) => void) =>
     setEstado((e) => { const opt = clonar(e.opt); f(opt); return { ...e, opt }; });
+  const cambiarTipo = (f: (t: CuadrillaTipo) => void) =>
+    setEstado((e) => { const cuadrillaTipo = clonar(e.cuadrillaTipo); f(cuadrillaTipo); return { ...e, cuadrillaTipo }; });
   const cambiarCuadrilla = (cuadrilla: HdT[]) => setEstado((e) => ({ ...e, cuadrilla, ejemploCuadrilla: false }));
 
   const errores = useMemo(() => validarConfig(estado.config), [estado.config]);
-  const trono = useMemo(() => (errores.length ? null : construirTrono(estado.config, estado.opt.confianza)), [estado.config, estado.opt.confianza, errores]);
+  const trono = useMemo(() => (errores.length ? null : construirTrono(estado.config)), [estado.config, errores]);
   const nPuestos = trono?.puestos.length ?? 0;
 
   // Quitar de lo colocado los puestos que ya no existen y a quien ya no está en la cuadrilla
@@ -140,14 +140,6 @@ export function App() {
     if (Object.keys(estado.asignacion).length && confirm('¿Quitar a todos de sus puestos?')) fijarAsignacion({});
   };
 
-  // ---- Puestos clave ----
-  const alternarClave = (codigo: string) =>
-    cambiarOpt((o) => {
-      const s = new Set(clavesEfectivas(estado.config, o.confianza));
-      if (s.has(codigo)) s.delete(codigo); else s.add(codigo);
-      o.confianza.puestosClave = [...s];
-    });
-
   // ---- Comprobar y rellenar huecos ----
   const comprobar = () => {
     setError(null);
@@ -209,12 +201,6 @@ export function App() {
       setEvaluacion({ resultado: null, error: null });
       setEstado(estadoEjemplo());
     }
-  };
-
-  const elegirClaves = () => {
-    setSeccion('cuadrante');
-    setPRes('cuadrante');
-    setModoCuadrante('claves');
   };
 
   // ---- Vista ----
@@ -295,11 +281,11 @@ export function App() {
           <Configuracion
             pestana={pConfig} setPestana={setPConfig}
             config={estado.config} cambiarConfig={cambiarConfig} trono={trono} errores={errores}
-            cuadrilla={estado.cuadrilla}
+            cuadrilla={estado.cuadrilla} cuadrillaTipo={estado.cuadrillaTipo} cambiarTipo={cambiarTipo}
             opt={estado.opt} cambiarOpt={cambiarOpt}
             esEjemploTrono={estado.ejemploTrono}
             cargarTronoEjemplo={() => setEstado((e) => ({ ...e, config: tronoEjemplo(), ejemploTrono: true }))}
-            borrarTodo={restablecer} elegirClaves={elegirClaves} />
+            borrarTodo={restablecer} />
         </main>
       ) : (
         <main class="contenido no-imprimir" id="resultados">
@@ -344,18 +330,18 @@ export function App() {
             <div class={`area${verRevision ? ' con-revision' : ''}`}>
               <div class="area-principal">
                 {pRes === 'cuadrante' && (
-                  <Cuadrante v={vista} cuadrilla={estado.cuadrilla} resaltados={resaltados} modo={modoCuadrante} setModo={setModoCuadrante}
-                    onMover={onMover} onPrevisualizar={onPrevisualizar} onClave={alternarClave} herramientas={herramientas} />
+                  <Cuadrante v={vista} cuadrilla={estado.cuadrilla} resaltados={resaltados}
+                    onMover={onMover} onPrevisualizar={onPrevisualizar} herramientas={herramientas} />
                 )}
                 {pRes === 'planta' && (
                   <>
                     {vista.resultado && <Indicadores r={vista.resultado} antes={previa ? evaluacion.resultado : null} />}
-                    <Planta v={vista} resaltados={resaltados} modo={modoPlanta} setModo={setModoPlanta} onClave={alternarClave}
+                    <Planta v={vista} resaltados={resaltados}
                       onMover={onMover} onPrevisualizar={onPrevisualizar} herramientas={herramientas} />
                   </>
                 )}
                 {pRes === 'resumen' && vista.resultado && (
-                  <Resumen v={vista} prioridad={estado.opt.prioridadConfianza} inclinacionMax={estado.opt.inclinacionMaxGrados} />
+                  <Resumen v={vista} inclinacionMax={estado.opt.inclinacionMaxGrados} />
                 )}
                 {pRes === 'lista' && <Lista v={vista} />}
               </div>

@@ -1,18 +1,9 @@
 import { propiedades, propiedadesPletina } from './secciones';
-import type { ConfigConfianza, ConfigTrono, Pesos, Puesto, Trono, RepartoManto } from './tipos';
+import type { ConfigTrono, Pesos, Puesto, Trono, RepartoManto } from './tipos';
 
 export const LETRAS = 'ABCDEFGH';
 /** Por debajo de esta separación (m) las filas no caben: no hay sitio para una persona. */
 export const SEPARACION_MINIMA = 0.3;
-
-/** Filas exteriores que la sugerencia automática marca como clave. */
-export const FILAS_CLAVE_AUTO = 2;
-
-export const CONFIANZA_POR_DEFECTO: ConfigConfianza = {
-  puestosClave: null,
-  penalConf2: 1,
-  penalConf1: 4,
-};
 
 /** Separación entre filas (m) al repartir `n` filas por igual en un voladizo de longitud `largo`. */
 export function separacionFilas(largo: number, n: number): number {
@@ -121,8 +112,8 @@ export function calcularPesos(c: ConfigTrono): Pesos {
   };
 }
 
-/** Construye la geometría completa: puestos con su código, posición, simetría y si son clave. */
-export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA_POR_DEFECTO): Trono {
+/** Construye la geometría completa: puestos con su código, posición y simetría. */
+export function construirTrono(c: ConfigTrono): Trono {
   const n = c.varales.numero;
   const L = c.mesa.largo, B = c.mesa.ancho;
   const p = c.puestos;
@@ -136,7 +127,6 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
   // Costeros repartidos uniformemente a lo largo de la mesa, con medio paso en los extremos.
   const xCosteros = Array.from({ length: nc }, (_, j) => L / 2 - ((j + 0.5) * L) / nc);
   const numeroMax = nf + nc + nb;
-  const fk = FILAS_CLAVE_AUTO;
 
   const puestos: Puesto[] = [];
   const clave = new Map<string, number>(); // "v:numero" -> idx
@@ -151,7 +141,7 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
     for (let k = 1; k <= nf; k++) {
       nuevo({
         codigo: `${letras[v]}${k}`, varal: v, zona: 'delante', numero: k,
-        x: L / 2 + dFilasDelante[nf - k], y: yVarales[v], clave: k <= fk, fila: k,
+        x: L / 2 + dFilasDelante[nf - k], y: yVarales[v], fila: k,
       });
     }
     if (v === 0 || v === n - 1) {
@@ -159,7 +149,7 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
         const numero = nf + 1 + j;
         nuevo({
           codigo: `${letras[v]}${numero}`, varal: v, zona: 'mesa', numero,
-          x: xCosteros[j], y: yVarales[v], clave: j === 0 || j === nc - 1, fila: -1,
+          x: xCosteros[j], y: yVarales[v], fila: -1,
         });
       }
     }
@@ -167,7 +157,7 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
       const numero = nf + nc + 1 + i;
       nuevo({
         codigo: `${letras[v]}${numero}`, varal: v, zona: 'detras', numero,
-        x: -L / 2 - dFilasDetras[i], y: yVarales[v], clave: i >= nb - fk, fila: numero,
+        x: -L / 2 - dFilasDetras[i], y: yVarales[v], fila: numero,
       });
     }
   }
@@ -177,16 +167,10 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
     for (let j = 0; j < ns; j++) {
       nuevo({
         codigo: `${letras[v]}-S${j + 1}`, varal: v, zona: 'submarino', numero: j + 1,
-        x: L / 2 - ((j + 0.5) * L) / ns, y: yVarales[v], clave: false, fila: -1,
+        x: L / 2 - ((j + 0.5) * L) / ns, y: yVarales[v], fila: -1,
       });
     }
   }
-  // Puestos clave elegidos por el capataz (si no ha elegido, queda la sugerencia automática)
-  if (conf.puestosClave) {
-    const elegidos = new Set(conf.puestosClave);
-    for (const q of puestos) q.clave = elegidos.has(q.codigo);
-  }
-  // Espejo: el mismo puesto en el varal simétrico (en el submarino, él mismo si ese varal no trabaja)
   for (const q of puestos) {
     const k = `${q.zona === 'submarino' ? 's' : ''}${n - 1 - q.varal}:${q.numero}`;
     q.espejo = clave.get(k) ?? q.idx;
@@ -203,17 +187,6 @@ export function construirTrono(c: ConfigTrono, conf: ConfigConfianza = CONFIANZA
   };
 }
 
-/** Códigos de la sugerencia automática de puestos clave. */
-export function clavesAutomaticas(c: ConfigTrono): string[] {
-  return construirTrono(c, CONFIANZA_POR_DEFECTO).puestos.filter((p) => p.clave).map((p) => p.codigo);
-}
-
-/** Códigos de los puestos clave efectivos (elegidos o automáticos). */
-export function clavesEfectivas(c: ConfigTrono, conf: ConfigConfianza): string[] {
-  return conf.puestosClave ?? clavesAutomaticas(c);
-}
-
-/** Comprueba la configuración y devuelve una lista de errores legibles. */
 export function validarConfig(c: ConfigTrono): string[] {
   const e: string[] = [];
   const pos = (v: number, nombre: string) => { if (!(v > 0)) e.push(`${nombre} debe ser mayor que cero.`); };

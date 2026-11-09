@@ -82,9 +82,29 @@ export interface Cabeza {
   longitud: number; // m
 }
 
+/** De dónde salen las alturas de la cuadrilla «tipo» con la que se estudia el largo de los varales. */
+export type OrigenTipo = 'ejemplo' | 'actual' | 'parametros' | 'historico';
+
+/**
+ * Cuadrilla tipo del trono: lo que suele haber un año normal. Como la gente cambia de un año a
+ * otro, el largo de los varales se estudia con muchas cuadrillas simuladas a partir de esta.
+ */
+export interface CuadrillaTipo {
+  origen: OrigenTipo;
+  /** Para «parametros»: altura de hombro media, dispersión y límites (cm). */
+  media: number;
+  desviacion: number;
+  min: number;
+  max: number;
+  /** Para «historico»: alturas de hombro (cm) de cuadrillas de otros años, pegadas tal cual. */
+  historico: string;
+  /** Gente que suele haber; null = tantos como en la cuadrilla actual. */
+  disponibles: number | null;
+  /** Cuánto puede subir o bajar la altura media de un año a otro (± cm). */
+  variacionCm: number;
+}
+
 export interface ConfigOptimizador {
-  /** 0 = la confianza no cuenta, 1 = máxima prioridad. */
-  prioridadConfianza: number;
   /** Inclinación delante-detrás máxima, en grados. */
   inclinacionMaxGrados: number;
   iteraciones: number;
@@ -92,27 +112,12 @@ export interface ConfigOptimizador {
   tolParejaCm: number;
   /** Si es false (por defecto), el trono nunca va «picado» (delantera más baja que la trasera). */
   permitirPicado: boolean;
-  confianza: ConfigConfianza;
-}
-
-export interface ConfigConfianza {
-  /**
-   * Códigos de los puestos que el capataz considera clave (A1, H32…).
-   * null = sugerencia automática: las 2 filas exteriores de delante y de detrás
-   * y los costeros de las cuatro esquinas de la mesa.
-   */
-  puestosClave: string[] | null;
-  /** Penalización (relativa) por un HdT de confianza 2 en un puesto clave. */
-  penalConf2: number;
-  /** Penalización (relativa) por un HdT de confianza 1 en un puesto clave. */
-  penalConf1: number;
 }
 
 export interface HdT {
   id: number;
   nombre: string;
   hombro: number; // cm
-  confianza: 1 | 2 | 3;
 }
 
 export type Zona = 'delante' | 'mesa' | 'detras' | 'submarino';
@@ -130,7 +135,6 @@ export interface Puesto {
   numero: number;
   x: number;
   y: number;
-  clave: boolean;
   /** Índice del puesto simétrico (en el otro varal exterior o interior equivalente). */
   espejo: number;
   /** Fila transversal (para igualar las 8 de una fila), o -1. */

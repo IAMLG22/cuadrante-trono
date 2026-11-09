@@ -1,7 +1,8 @@
 // Guardado de los datos en localStorage.
 
-import type { ConfigOptimizador, ConfigTrono, HdT } from '../geometria/tipos';
-import { CONFIANZA_POR_DEFECTO, construirTrono, filasAutomaticas } from '../geometria/trono';
+import type { ConfigOptimizador, ConfigTrono, CuadrillaTipo, HdT } from '../geometria/tipos';
+import { cuadrillaTipoPorDefecto } from '../optimizador/longitud';
+import { construirTrono, filasAutomaticas } from '../geometria/trono';
 import { cuadrillaEjemplo, optimizadorPorDefecto, tronoEjemplo } from './ejemplo';
 import { asignacionDesdeResultado, type Asignacion } from './tablas';
 
@@ -14,6 +15,8 @@ export interface Estado {
   /** Si el trono o la cuadrilla siguen siendo los de ejemplo. */
   ejemploTrono: boolean;
   ejemploCuadrilla: boolean;
+  /** Cuadrilla de un año normal, para estudiar el largo de los varales. */
+  cuadrillaTipo: CuadrillaTipo;
   /** Lo que ha colocado el capataz en el cuadrante. */
   asignacion: Asignacion;
   /** Si ya se ha pulsado «Comprobar»: desde entonces la revisión se actualiza sola. */
@@ -27,6 +30,7 @@ export function estadoEjemplo(): Estado {
     cuadrilla: cuadrillaEjemplo(),
     ejemploTrono: true,
     ejemploCuadrilla: true,
+    cuadrillaTipo: cuadrillaTipoPorDefecto(),
     asignacion: {},
     comprobado: false,
   };
@@ -40,7 +44,12 @@ export function cargarEstado(): Estado {
     if (!e.config || !e.cuadrilla || !e.opt) return estadoEjemplo();
     // Completar campos que puedan faltar en datos guardados por versiones anteriores
     const base = estadoEjemplo();
-    e.opt = { ...base.opt, ...e.opt, confianza: { ...CONFIANZA_POR_DEFECTO, ...e.opt.confianza } };
+    e.opt = { ...base.opt, ...e.opt };
+    // La confianza y los puestos clave ya no existen
+    const opt = e.opt as ConfigOptimizador & { prioridadConfianza?: number; confianza?: unknown };
+    delete opt.prioridadConfianza;
+    delete opt.confianza;
+    e.cuadrilla = e.cuadrilla.map(({ id, nombre, hombro }) => ({ id, nombre, hombro }));
     // Campos añadidos en versiones posteriores
     e.config.varales.separaciones ??= null;
     e.config.varales.cabezas ??= { delante: { peso: 0, longitud: 0 }, detras: { peso: 0, longitud: 0 } };
@@ -54,12 +63,13 @@ export function cargarEstado(): Estado {
     delete pu.distPrimeraFila;
     delete pu.separacionFilas;
     e.comprobado ??= false;
+    e.cuadrillaTipo = { ...cuadrillaTipoPorDefecto(), ...e.cuadrillaTipo };
     if (!e.asignacion) {
       e.asignacion = {};
       // Versión anterior: el cuadrante calculado se convierte en lo colocado
       if (e.resultado) {
         try {
-          const t = construirTrono(e.resultado.datos.config, e.resultado.datos.opt.confianza);
+          const t = construirTrono(e.resultado.datos.config);
           e.asignacion = asignacionDesdeResultado(t, e.resultado.resultado.asignacion);
           e.comprobado = true;
         } catch { /* se ignora */ }

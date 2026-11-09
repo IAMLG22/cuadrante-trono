@@ -2,33 +2,25 @@
 //  - Reparto: Σ (carga − ideal)², el doble si la carga queda por debajo de lo ideal y
 //    un recargo fuerte si el HdT no llega al varal (fuerza lineal negativa).
 //  - Filas: varianza de las cargas dentro de cada fila transversal (las 8 de una fila).
-//  - Confianza: penalización por HdT de confianza 2 o 1 en puestos clave.
 //  - Inclinación: penalización si el cabeceo supera el máximo.
 //  - Alabeo: término cuadrático que lo empuja a cero (simetría izquierda-derecha).
 
 import { GRAV } from '../fem/modelo';
-import type { ConfigOptimizador, HdT, Trono } from '../geometria/tipos';
+import type { ConfigOptimizador, Trono } from '../geometria/tipos';
 
 export const PESO_DEFECTO = 2; // multiplicador si la carga queda por debajo de la ideal
 export const PESO_NO_CARGA = 10; // recargo si el HdT no llega al varal
 export const PESO_FILAS = 0.5;
-/** A prioridad máxima, un confianza 2 en un puesto clave «cuesta» lo mismo que una desviación de 1,5 × la carga ideal. */
-export const ESCALA_CONFIANZA = 1.5;
 
 export interface Evaluador {
   N: number;
   FidN: number;
   filas: Int32Array[];
-  /** Penalización (kg²) de cada HdT (por índice en la cuadrilla) en un puesto clave. */
-  penalClave: Float64Array;
-  /** Penalización (kg²) de cada HdT si queda de reserva (desempate). */
-  penalReserva: Float64Array;
-  clave: Uint8Array;
   aMax: number;
   permitirPicado: boolean;
 }
 
-export function crearEvaluador(t: Trono, cuadrilla: HdT[], op: ConfigOptimizador, FidN: number): Evaluador {
+export function crearEvaluador(t: Trono, op: ConfigOptimizador, FidN: number): Evaluador {
   const N = t.puestos.length;
   const porFila = new Map<number, number[]>();
   for (const p of t.puestos) {
@@ -36,16 +28,9 @@ export function crearEvaluador(t: Trono, cuadrilla: HdT[], op: ConfigOptimizador
     if (!porFila.has(p.fila)) porFila.set(p.fila, []);
     porFila.get(p.fila)!.push(p.idx);
   }
-  const P = op.prioridadConfianza * ESCALA_CONFIANZA * (FidN / GRAV);
-  const P2 = P * P;
-  const c = op.confianza;
-  const penalClave = Float64Array.from(cuadrilla, (h) => (h.confianza === 3 ? 0 : h.confianza === 2 ? c.penalConf2 : c.penalConf1) * P2);
-  const penalReserva = Float64Array.from(cuadrilla, (h) => (h.confianza === 3 ? 0.5 : h.confianza === 2 ? 0.25 : 0));
   return {
     N, FidN,
     filas: [...porFila.values()].map((f) => Int32Array.from(f)),
-    penalClave, penalReserva,
-    clave: Uint8Array.from(t.puestos, (p) => (p.clave ? 1 : 0)),
     aMax: Math.tan((op.inclinacionMaxGrados * Math.PI) / 180),
     permitirPicado: op.permitirPicado ?? false,
   };
@@ -94,13 +79,5 @@ export function costeCabeceo(e: Evaluador, a: number, b = 0): number {
   let c = PESO_ALABEO * b * b;
   if (Math.abs(a) > e.aMax) c += PESO_INCLINACION * ((Math.abs(a) - e.aMax) / escala) ** 2;
   if (a < 0 && !e.permitirPicado) c += PESO_PICADO * (a / escala) ** 2;
-  return c;
-}
-
-/** Término de confianza para una asignación completa (puesto → índice de HdT). */
-export function costeConfianza(e: Evaluador, asig: ArrayLike<number>, reservas: ArrayLike<number>): number {
-  let c = 0;
-  for (let i = 0; i < e.N; i++) if (e.clave[i]) c += e.penalClave[asig[i]];
-  for (let j = 0; j < reservas.length; j++) c += e.penalReserva[reservas[j]];
   return c;
 }

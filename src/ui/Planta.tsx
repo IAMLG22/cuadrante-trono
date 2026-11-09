@@ -1,6 +1,5 @@
 // Planta del trono en SVG: mesa, varales, quitacimbres y puestos coloreados por carga.
-// - Modo «Mover»: se arrastra un puesto sobre otro para intercambiarlos.
-// - Modo «Puestos clave»: al tocar un puesto se marca o desmarca como clave.
+// Se arrastra un puesto sobre otro para intercambiarlos; al tocar uno se ve su ficha.
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -9,15 +8,12 @@ import { mismoDestino, useArrastre, type Destino, type Origen } from './arrastre
 
 const CLASES: ClaseCarga[] = ['bien', 'baja', 'alta', 'nocarga'];
 
-export type ModoPlanta = 'mover' | 'claves';
-
 export function Leyenda() {
   return (
     <div class="leyenda">
       {CLASES.map((c) => (
         <span><i class={`muestra c-${c}`} />{NOMBRE_CLASE[c]}</span>
       ))}
-      <span><i class="muestra anillo" />Clave</span>
     </div>
   );
 }
@@ -25,15 +21,12 @@ export function Leyenda() {
 interface Props {
   v: Vista;
   resaltados: Set<string>;
-  modo: ModoPlanta;
-  setModo: (m: ModoPlanta) => void;
-  onClave: (codigo: string) => void;
   onMover: (o: Origen, d: Destino) => void;
   onPrevisualizar: (o: Origen, d: Destino | null) => void;
   herramientas?: ComponentChildren;
 }
 
-export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevisualizar, herramientas }: Props) {
+export function Planta({ v, resaltados, onMover, onPrevisualizar, herramientas }: Props) {
   const t = v.trono;
   const [sel, setSel] = useState<string | null>(null);
   // Orientación automática según el ancho disponible, salvo que se gire a mano
@@ -50,13 +43,11 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
   const horizontal = giro === 'h' || (giro === 'auto' && ancho >= 900);
 
   const arr = useArrastre({
-    alSoltar: (o, d) => { if (modo === 'mover' && 'puesto' in d) onMover(o, d); },
+    alSoltar: (o, d) => { if ('puesto' in d) onMover(o, d); },
     alPrevisualizar: (o, d) => onPrevisualizar(o, d && 'puesto' in d ? d : null),
     alPulsar: (o) => {
       if (!('puesto' in o)) return;
-      const p = t.puestos.find((q) => q.ref === o.puesto);
-      if (modo === 'claves') { if (p) onClave(p.codigo); }
-      else setSel(sel === o.puesto ? null : o.puesto);
+      setSel(sel === o.puesto ? null : o.puesto);
     },
   });
 
@@ -82,21 +73,15 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
   const r = v.resultado;
 
   return (
-    <div class={`planta modo-${modo}`}>
+    <div class="planta">
       <div class="barra-planta">
-        <div class="segmentado" role="radiogroup" aria-label="Modo de la planta">
-          <button type="button" role="radio" aria-checked={modo === 'mover'} class={modo === 'mover' ? 'activo' : ''} onClick={() => setModo('mover')}>Mover</button>
-          <button type="button" role="radio" aria-checked={modo === 'claves'} class={modo === 'claves' ? 'activo' : ''} onClick={() => setModo('claves')}>
-            Puestos clave <span class="contador">{t.puestos.filter((p) => p.clave).length}</span>
-          </button>
-        </div>
         <div class="herramientas">
           {herramientas}
           <button type="button" class="icono" title="Girar la planta" aria-label="Girar la planta" onClick={() => setGiro(horizontal ? 'v' : 'h')}>⤾</button>
         </div>
       </div>
       <p class="pista">
-        {modo === 'claves' ? 'Toca los puestos que consideres clave.' : 'Arrastra un puesto sobre otro para intercambiarlos. Toca uno para ver su ficha.'}
+        Arrastra un puesto sobre otro para intercambiarlos. Toca uno para ver su ficha.
       </p>
 
       <div class="lienzo-marco" ref={marco}>
@@ -129,21 +114,19 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
               const p = f.puesto;
               const [x, y] = P(p.x, p.y);
               const o = { puesto: p.ref };
-              const clases = ['puesto', `c-${f.clase}`, p.clave ? 'clave' : '', sel === p.ref ? 'sel' : '',
+              const clases = ['puesto', `c-${f.clase}`, sel === p.ref ? 'sel' : '',
                 mismoDestino(arr.objetivo, o) ? 'objetivo' : '', resaltados.has(p.ref) ? 'resaltado' : ''];
               return (
                 <g class={clases.join(' ')} data-puesto={p.ref}
                   onPointerDown={(e) => arr.empezar(e as unknown as PointerEvent, o, f.hdt ? `${f.hdt.nombre} · ${fmt(f.hdt.hombro)} cm` : '')}
                   role="button" tabIndex={0}
-                  aria-label={`${p.codigo}${f.hdt ? `: ${f.hdt.nombre}` : ', vacío'}${f.carga !== null ? `, ${fmt(f.carga)} kg` : ''}${p.clave ? ', puesto clave' : ''}`}
+                  aria-label={`${p.codigo}${f.hdt ? `: ${f.hdt.nombre}` : ', vacío'}${f.carga !== null ? `, ${fmt(f.carga)} kg` : ''}`}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return;
                     e.preventDefault();
-                    if (modo === 'claves') onClave(p.codigo);
-                    else setSel(p.ref);
+                    setSel(p.ref);
                   }}>
                   {resaltados.has(p.ref) && <circle class="halo" cx={x} cy={y} r={0.27} />}
-                  {p.clave && <circle class="aro" cx={x} cy={y} r={0.215} />}
                   <circle class="disco" cx={x} cy={y} r={0.16} />
                   <text x={x} y={y}>{p.zona === 'submarino' ? p.codigo.split('-')[1] : p.codigo}</text>
                 </g>
@@ -157,7 +140,6 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
             <button type="button" class="icono cerrar" aria-label="Cerrar ficha" onClick={() => setSel(null)}>×</button>
             <span class="ficha-codigo">
               {ficha.puesto.codigo}
-              {ficha.puesto.clave && <span class="ficha-clave">clave</span>}
             </span>
             <span class="ficha-nombre">{ficha.hdt.nombre}</span>
             {ficha.carga !== null && r && (
@@ -166,7 +148,6 @@ export function Planta({ v, resaltados, modo, setModo, onClave, onMover, onPrevi
             <span class="ficha-dato">
               Hombro {fmt(ficha.hdt.hombro)} cm{r && ficha.carga !== null ? ` · ideal aquí ${fmt(r.hombroIdealCm[ficha.puesto.idx])} cm` : ''}
             </span>
-            <span class="ficha-dato">Confianza {ficha.hdt.confianza}</span>
           </div>
         )}
       </div>

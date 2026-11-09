@@ -258,7 +258,6 @@ svg .flecha { stroke: var(--oro); stroke-width: 0.035; }
 svg .punta-flecha { fill: var(--oro); }
 svg .puesto { cursor: pointer; }
 svg .puesto .disco { stroke: var(--superficie); stroke-width: 0.025; }
-svg .puesto .aro { fill: none; stroke: var(--oro); stroke-width: 0.035; }
 svg .puesto text {
   fill: #fff; font-size: 0.095px; font-weight: 600; text-anchor: middle; dominant-baseline: central; pointer-events: none;
 }
@@ -275,8 +274,6 @@ svg .puesto.objetivo .disco { stroke: var(--oro); stroke-width: 0.07; }
 svg .puesto:focus { outline: none; }
 svg .puesto:focus-visible .disco { stroke: var(--oro); stroke-width: 0.06; }
 .modo-mover svg .puesto { touch-action: none; cursor: grab; }
-.modo-claves svg .puesto:not(.clave) { opacity: 0.45; }
-.modo-claves svg .puesto.sub { opacity: 0.15; cursor: default; }
 .planta { user-select: none; -webkit-user-select: none; }
 
 .ficha {
@@ -286,7 +283,6 @@ svg .puesto:focus-visible .disco { stroke: var(--oro); stroke-width: 0.06; }
 }
 .ficha .cerrar { position: absolute; top: 4px; right: 4px; min-height: 28px; min-width: 28px; }
 .ficha-codigo { font-size: 0.75rem; color: var(--suave); letter-spacing: 0.04em; }
-.ficha-clave { margin-left: 8px; color: var(--oro); }
 .ficha-nombre { font-weight: 600; padding-right: 20px; }
 .ficha-carga { font-size: 1.2rem; font-weight: 500; font-variant-numeric: tabular-nums; }
 .ficha-carga small { font-size: 0.75rem; color: var(--suave); margin-left: 4px; }
@@ -303,7 +299,6 @@ svg .puesto:focus-visible .disco { stroke: var(--oro); stroke-width: 0.06; }
 .muestra.c-baja { background: var(--baja); }
 .muestra.c-alta { background: var(--alta); }
 .muestra.c-nocarga { border: 1.5px dashed var(--nollega); }
-.muestra.anillo { border: 1.5px solid var(--oro); }
 .bandeja-reservas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .bandeja-reservas .pista { margin: 0 4px 0 0; }
 .chip-reserva {
@@ -338,7 +333,6 @@ svg .puesto:focus-visible .disco { stroke: var(--oro); stroke-width: 0.06; }
 .tabla.editable input.corto { width: 5em; }
 .tabla.editable select { background: transparent; border-color: transparent; }
 .orden { border: none; background: none; padding: 0; min-height: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; }
-.fila-clave .codigo::after { content: ' ●'; color: var(--oro); font-size: 0.6em; vertical-align: middle; }
 .carga.c-bien, b.c-bien { color: var(--bien); }
 .carga.c-baja, b.c-baja, .carga.c-nocarga, b.c-nocarga { color: var(--baja); }
 .carga.c-alta, b.c-alta { color: var(--alta); }
@@ -350,7 +344,6 @@ svg .puesto:focus-visible .disco { stroke: var(--oro); stroke-width: 0.06; }
 .por-varal td { min-width: 118px; border-left: 1px solid var(--linea); }
 .por-varal td .nombre { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 .por-varal td .detalle { display: block; color: var(--tenue); font-size: 0.74rem; }
-.por-varal td.clave { box-shadow: inset 2px 0 0 var(--oro); }
 .por-varal td.cortado { text-align: center; color: var(--tenue); background: var(--hundido); }
 
 .listas { display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
@@ -422,10 +415,6 @@ button.secundario { min-height: 32px; padding: 4px 12px; font-size: 0.88rem; }
 .p-datos { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 0.78rem; font-variant-numeric: tabular-nums; color: var(--suave); }
 .p-donde { font-size: 0.7rem; padding: 0 5px; border-radius: 4px; background: var(--hundido); color: var(--suave); }
 .vacio-lista { padding: 16px 8px; color: var(--tenue); font-size: 0.85rem; text-align: center; }
-.conf { font-size: 0.55rem; letter-spacing: 1px; color: var(--suave); }
-.conf-3 { color: var(--oro); }
-.conf-1 { color: var(--baja); }
-.conf-vacia { color: var(--linea-fuerte); }
 
 .rejilla-varales { overflow: auto; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--superficie); max-height: calc(100vh - 210px); }
 .cuadrante { border-collapse: separate; border-spacing: 3px; width: 100%; table-layout: fixed; min-width: 760px; }
@@ -452,13 +441,9 @@ button.secundario { min-height: 32px; padding: 4px 12px; font-size: 0.88rem; }
 .celda.c-baja { box-shadow: inset 3px 0 0 var(--baja); }
 .celda.c-alta { box-shadow: inset 3px 0 0 var(--alta); }
 .celda.c-nocarga { box-shadow: inset 3px 0 0 var(--baja); background: transparent; border: 1px dashed var(--baja); }
-.celda.clave { border-color: var(--oro); }
-.celda.clave .c-codigo { color: var(--oro); font-weight: 600; }
 .celda.resaltado, .chip.resaltado { outline: 2px solid var(--oro); outline-offset: 1px; }
 .celda.objetivo { background: var(--oro-suave); border: 1px solid var(--oro); }
 .celda.elegido { box-shadow: 0 0 0 2px var(--oro); }
-.modo-claves .celda { cursor: pointer; }
-.modo-claves .celda:not(.clave) { opacity: 0.6; }
 
 .hueco-mesa { padding: 0 !important; height: auto !important; }
 .chip {
@@ -529,8 +514,8 @@ svg .cabeza { stroke: var(--suave); stroke-width: 0.09; stroke-linecap: round; }
 .config-formularios .formulario { columns: 2 320px; column-gap: 16px; }
 .config-formularios .formulario > * { margin-bottom: 16px; }
 .config-cuadrilla .config-formularios .formulario { columns: auto; }
-.config-confianza .formulario { columns: 3 300px; column-gap: 16px; }
-.config-confianza .formulario > * { margin-bottom: 16px; }
+.config-calculo .formulario { columns: 3 300px; column-gap: 16px; }
+.config-calculo .formulario > * { margin-bottom: 16px; }
 .config-vista { position: sticky; top: 76px; }
 @media (max-width: 1000px) {
   .config-trono, .config-cuadrilla { grid-template-columns: minmax(0, 1fr); }
@@ -649,3 +634,13 @@ figure.esquema .punto-puesto.sub { fill: var(--suave); }
 .tabla-largo { margin-top: 10px; }
 .tabla-largo summary { cursor: pointer; font-size: 0.82rem; color: var(--suave); }
 .tabla-largo .fila-actual td { font-weight: 600; background: var(--oro-suave); }
+
+/* ---------- Cuadrilla tipo y banda de años ---------- */
+.tipo-largo { columns: 2 320px; column-gap: 16px; }
+.tipo-largo > * { margin-bottom: 16px; }
+.tipo-largo textarea { width: 100%; font: inherit; }
+.banda-largo { fill: var(--oro); fill-opacity: 0.16; stroke: none; }
+.muestra-banda { display: inline-block; width: 18px; height: 10px; border-radius: 2px; background: var(--oro); opacity: 0.25; }
+.zona-sin-gente { fill: var(--alta); fill-opacity: 0.06; }
+.rotulo-sin-gente { fill: var(--alta); font-size: 10px; text-anchor: end; }
+.aviso-gente { color: var(--alta); font-size: 0.88rem; }

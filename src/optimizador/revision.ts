@@ -118,28 +118,6 @@ export function revisar(t: Trono, r: Resultado, cuadrilla: HdT[], opt: ConfigOpt
     });
   }
 
-  // Confianza en los puestos clave
-  const claves = t.puestos.filter((q) => q.clave && ocupado(q.idx));
-  const conf = (i: number) => porId.get(r.asignacion[i])?.confianza ?? 0;
-  const c1 = claves.filter((q) => conf(q.idx) === 1);
-  if (c1.length) {
-    p.push({
-      nivel: 'error',
-      titulo: `Confianza 1 en ${c1.length} puesto${c1.length === 1 ? '' : 's'} clave`,
-      detalle: lista(c1.map((q) => `${q.codigo} (${nombre(q.idx)})`)),
-      puestos: c1.map((q) => q.ref),
-    });
-  }
-  const c2 = claves.filter((q) => conf(q.idx) === 2);
-  if (c2.length) {
-    p.push({
-      nivel: 'aviso',
-      titulo: `Confianza 2 en ${c2.length} puesto${c2.length === 1 ? '' : 's'} clave`,
-      detalle: lista(c2.map((q) => q.codigo)),
-      puestos: c2.map((q) => q.ref),
-    });
-  }
-
   // Cuesta: la fila exterior que se descarga demasiado
   for (const f of r.cuesta.filas) {
     if (f.caso === 'llano') continue;
